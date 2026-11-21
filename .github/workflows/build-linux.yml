@@ -15,12 +15,12 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            args: --win --x64 -c.directories.output=dist-win
-            path: dist-win
+            args: --win --x64
+            path: dist-release/*.exe
             name: windows
           - os: ubuntu-latest
-            args: --linux --x64 -c.directories.output=dist-linux
-            path: dist-linux
+            args: --linux --x64
+            path: dist-release/*
             name: linux
     runs-on: ${{ matrix.os }}
     steps:
@@ -50,7 +50,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}
-          path: ${{ matrix.path }}/*
+          path: ${{ matrix.path }}
           if-no-files-found: error
 
   release:
