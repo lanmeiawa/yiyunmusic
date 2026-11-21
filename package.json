@@ -2,7 +2,9 @@
   "name": "yiyunmusic",
   "version": "2.0.2",
   "private": true,
-  "description": "亦云音乐 - 简洁明亮的网易云音乐第三方桌面客户端，主打动态歌词",
+  "description": "把动态歌词做到极致的网易云音乐第三方桌面客户端",
+  "homepage": "https://github.com/lanmeiawa/yiyunmusic",
+  "author": "yiyunmusic",
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "node scripts/launch.js --dev",
@@ -83,6 +85,34 @@
     },
     "portable": {
       "artifactName": "yiyunmusic-portable-${version}.${ext}"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "tar.gz",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "Audio",
+      "executableName": "yiyunmusic",
+      "artifactName": "yiyunmusic-${version}-${arch}.${ext}",
+      "synopsis": "动态歌词体验最强的网易云音乐第三方客户端",
+      "maintainer": "yiyunmusic"
     }
   }
 }
