@@ -17,7 +17,7 @@ export default function TitleBar() {
   const [themeOpen, setThemeOpen] = useState(false)
   const {
     view, setView, currentPlaylistId, doSearch, theme, setTheme, desktopLyrics, toggleDesktopLyrics, customization,
-    searchHistory, clearSearchHistory, removeSearchHistory
+    searchHistory, clearSearchHistory, removeSearchHistory, t
   } = useApp()
 
   // 热搜与搜索建议
@@ -95,7 +95,7 @@ export default function TitleBar() {
           onChange={(e) => { setQuery(e.target.value); loadSuggest(e.target.value) }}
           onFocus={loadHotSearch}
           onBlur={() => setTimeout(() => setSearchPanelOpen(false), 200)}
-          placeholder="搜索音乐、歌单、歌手"
+          placeholder={t('search.placeholder')}
           spellCheck={false}
         />
         {searchPanelOpen && (query.trim() === '' ? (searchHistory.length > 0 || hotList.length > 0) : sugList.length > 0) && (
@@ -103,8 +103,8 @@ export default function TitleBar() {
             {query.trim() === '' && searchHistory.length > 0 && (
               <>
                 <div className="search-panel-title">
-                  搜索历史
-                  <button className="panel-clear" onClick={clearSearchHistory}>清空</button>
+                  {t('search.history')}
+                  <button className="panel-clear" onClick={clearSearchHistory}>{t('search.clear')}</button>
                 </div>
                 {searchHistory.map((w) => (
                   <button key={w} className="search-sug-row history" onClick={() => { doSearch(w); setSearchPanelOpen(false); setQuery('') }}>
@@ -121,7 +121,7 @@ export default function TitleBar() {
             )}
             {query.trim() === '' && hotList.length > 0 && (
               <>
-                <div className="search-panel-title">🔥 网易云热搜</div>
+                <div className="search-panel-title">🔥 {t('search.hot')}</div>
                 {hotList.map((w, i) => (
                   <button key={w} className="search-sug-row" onClick={() => { doSearch(w); setSearchPanelOpen(false); setQuery('') }}>
                     <span className="hot-rank">{i + 1}</span>
@@ -132,7 +132,7 @@ export default function TitleBar() {
             )}
             {query.trim() !== '' && sugList.length > 0 && (
               <>
-                <div className="search-panel-title">搜索建议</div>
+                <div className="search-panel-title">{t('search.suggest')}</div>
                 {sugList.map((name) => (
                   <button key={name} className="search-sug-row" onClick={() => { doSearch(name); setSearchPanelOpen(false); setQuery('') }}>
                     <span className="hot-word">{name}</span>

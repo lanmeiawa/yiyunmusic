@@ -10,7 +10,8 @@ function hashCode(s: string): number {
   for (let i = 0; i < s.length; i++) { h = (h << 5) - h + s.charCodeAt(i); h |= 0 }
   return h
 }
-import type { CommentItem, RadioCategory, LyricSearchItem, DownloadDialog, QualityProbe } from './types'
+import type { CommentItem, RadioCategory, LyricSearchItem, DownloadDialog, QualityProbe, AccountItem } from './types'
+import { translate, type Locale } from './i18n'
 import { coverUrl } from './utils/cover'
 import { probeLabel, formatSize, levelLabel } from './utils/quality'
 import { EQ_PRESETS, ensureGraph, configureEq, setEqEnabled } from './utils/audioGraph'
@@ -145,6 +146,14 @@ interface AppContextValue {
   searching: boolean
   searchError: string
   doSearch: (keyword: string) => Promise<void>
+  // 多账号
+  accounts: AccountItem[]
+  switchAccount: (id: string) => Promise<boolean>
+  removeAccount: (id: string) => Promise<void>
+  refreshAccounts: () => Promise<void>
+  // 多语言
+  locale: Locale
+  t: (key: string, vars?: Record<string, string | number>) => string
   // 搜索历史
   searchHistory: string[]
   clearSearchHistory: () => void
@@ -197,12 +206,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   })
   const [searchKeyword, setSearchKeyword] = useState('')
   const [searchError, setSearchError] = useState('')
+  const [accounts, setAccounts] = useState<AccountItem[]>([])
   const [searchResults, setSearchResults] = useState<{ songs: Track[]; playlists: Playlist[]; shows?: Track[]; albums?: any[]; artists?: any[]; lyricHits?: LyricSearchItem[] }>({
     songs: [], playlists: []
   })
   const [searching, setSearching] = useState(false)
   const [historyTracks, setHistoryTracks] = useState<Track[]>([])
   const [customization, setCustomizationState] = useState<Customization>(DEFAULT_CUSTOMIZATION)
+  // 多语言
+  const locale = (customization.language || 'zh') as Locale
+  const t = useCallback((key: string, vars?: Record<string, string | number>) => translate(locale, key, vars), [locale])
   const [bgData, setBgData] = useState('')
   const [immersive, setImmersiveState] = useState(false)
   const msgTimer = useRef<any>(null)
@@ -251,6 +264,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setProfileState(p)
   }, [])
 
+  const refreshAccounts = useCallback(async () => {
+    try {
+      const list = await window.eApi.accountsList()
+      setAccounts(Array.isArray(list) ? list : [])
+    } catch {
+      setAccounts([])
+    }
+  }, [])
+
   // 初始化：读取本地登录态
   useEffect(() => {
     ;(async () => {
@@ -281,6 +303,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             window.eApi.customSet({ eqBands: bands, eqPreset: legacy }).catch(() => {})
           }
         }
+        refreshAccounts()
         if (s.theme) setThemeState(s.theme)
         if (s.quality) setQualityState(s.quality)
         if (s.desktopLyrics) setDesktopLyricsState(s.desktopLyrics)
@@ -853,6 +876,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setMessage('歌单加载失败，请检查登录状态或网络')
     }
   }, [profile?.userId, setMessage])
+
+  const switchAccount = useCallback(async (id: string) => {
+    try {
+      const res: any = await window.eApi.accountsSwitch(id)
+      if (res?.ok && res.profile) {
+        setProfileState(res.profile)
+        await refreshAccounts()
+        await loadPlaylists()
+        setMessage(`已切换到「${res.profile.nickname}」`)
+        return true
+      }
+      setMessage('该账号登录状态已失效，请重新扫码登录')
+      return false
+    } catch (e: any) {
+      setMessage('切换账号失败：' + (e?.message || '未知错误'))
+      return false
+    }
+  }, [refreshAccounts, loadPlaylists, setMessage])
+
+  const removeAccount = useCallback(async (id: string) => {
+    try {
+      await window.eApi.accountsRemove(id)
+      await refreshAccounts()
+      setMessage('已移除该账号')
+    } catch {
+      setMessage('移除账号失败')
+    }
+  }, [refreshAccounts, setMessage])
 
   const loadLyric = useCallback(async (id: number) => {
     try {
@@ -1482,6 +1533,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     desktopLyrics, toggleDesktopLyrics, updateDesktopLyrics,
     searchKeyword, searchResults, searching, searchError, doSearch,
     searchHistory, clearSearchHistory, removeSearchHistory,
+    accounts, switchAccount, removeAccount, refreshAccounts, locale, t,
     historyTracks, loadHistory,
     customization, setCustomization, chooseBg, bgData,
     likedIds, toggleLike, isLiked, addToPlaylist, createPlaylist, deletePlaylist,

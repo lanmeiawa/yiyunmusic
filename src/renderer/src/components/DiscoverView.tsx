@@ -7,7 +7,7 @@ import { coverUrl } from '../utils/cover'
 import NetImg from './NetImg'
 
 export default function DiscoverView() {
-  const { profile, playlists, openPlaylist, openLogin, customization, playTrack, setView } = useApp()
+  const { profile, playlists, openPlaylist, openLogin, customization, playTrack, setView, t } = useApp()
   const [dailyCount, setDailyCount] = useState(0)
   const [dailyLoading, setDailyLoading] = useState(false)
   // 每日推荐卡片数据（拉一次数量与封面）
@@ -50,7 +50,7 @@ export default function DiscoverView() {
   }, [])
 
   const hour = new Date().getHours()
-  const greeting = hour < 6 ? '夜深了' : hour < 11 ? '早上好' : hour < 14 ? '中午好' : hour < 18 ? '下午好' : '晚上好'
+  const greeting = hour < 6 ? t('discover.night') : hour < 11 ? t('discover.morning') : hour < 14 ? t('discover.noon') : hour < 18 ? t('discover.afternoon') : t('discover.evening')
 
   return (
     <div className="discover">
@@ -93,7 +93,7 @@ export default function DiscoverView() {
           }}
         >
           <span className="quick-icon">📅</span>
-          <span className="quick-text"><b>每日推荐</b><i>{dailyLoading ? '加载中…' : `${dailyCount || 30} 首为你定制`}</i></span>
+          <span className="quick-text"><b>{t('discover.daily')}</b><i>{dailyLoading ? t('common.loading') : t('discover.dailySub', { count: dailyCount || 30 })}</i></span>
           <span className="quick-play"><IconPlay size={15} /></span>
         </button>
         <button
@@ -110,7 +110,7 @@ export default function DiscoverView() {
           }}
         >
           <span className="quick-icon">🔥</span>
-          <span className="quick-text"><b>热歌排行榜</b><i>全网最热单曲</i></span>
+          <span className="quick-text"><b>{t('discover.chart')}</b><i>{t('discover.chartSub')}</i></span>
           <span className="quick-play"><IconPlay size={15} /></span>
         </button>
         <button
@@ -118,7 +118,7 @@ export default function DiscoverView() {
           onClick={() => setView('radio')}
         >
           <span className="quick-icon">📻</span>
-          <span className="quick-text"><b>听书电台</b><i>热门节目随时听</i></span>
+          <span className="quick-text"><b>{t('discover.radio')}</b><i>{t('discover.radioSub')}</i></span>
           <span className="quick-play"><IconPlay size={15} /></span>
         </button>
         <button
@@ -126,7 +126,7 @@ export default function DiscoverView() {
           onClick={() => setView('local')}
         >
           <span className="quick-icon">🎵</span>
-          <span className="quick-text"><b>本地音乐</b><i>扫描本机音频播放</i></span>
+          <span className="quick-text"><b>{t('discover.local')}</b><i>{t('discover.localSub')}</i></span>
           <span className="quick-play"><IconPlay size={15} /></span>
         </button>
       </div>

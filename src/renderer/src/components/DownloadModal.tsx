@@ -9,7 +9,7 @@ import { IconDownload } from './Icons'
  * 打开时已通过接口实时探测该歌曲可用音质，这里只做展示与确认。
  */
 export default function DownloadModal() {
-  const { downloadDialog, closeDownload, confirmDownload, customization } = useApp()
+  const { downloadDialog, closeDownload, confirmDownload, customization, t } = useApp()
   const [selected, setSelected] = useState<QualityProbe | null>(null)
 
   const options = useMemo(() => uniqueProbes(downloadDialog?.probes || []), [downloadDialog?.probes])
@@ -33,7 +33,7 @@ export default function DownloadModal() {
         <div className="dl-modal-head">
           <div className="dl-modal-icon"><IconDownload size={20} /></div>
           <div className="dl-modal-title">
-            <h3>下载「{track.name}」</h3>
+            <h3>{t('download.title', { name: track.name })}</h3>
             <p>{track.artists.map((a) => a.name).join(' / ') || '未知歌手'}</p>
           </div>
         </div>
@@ -41,10 +41,10 @@ export default function DownloadModal() {
         {loading ? (
           <div className="dl-modal-loading">
             <span className="dl-spinner" />
-            正在通过接口获取可用音质…
+            {t('download.fetching')}
           </div>
         ) : options.length === 0 ? (
-          <div className="dl-modal-empty">{error || '该歌曲暂无可用音源，可能受版权或地区限制'}</div>
+          <div className="dl-modal-empty">{error || t('download.noSource')}</div>
         ) : (
           <div className="dl-modal-list">
             {options.map((p) => {
@@ -72,18 +72,18 @@ export default function DownloadModal() {
 
         {error && options.length > 0 && <p className="dl-modal-error">{error}</p>}
         <p className="dl-modal-tip">
-          音质等级、码率与文件大小均由接口实时返回；实际可用性取决于歌曲版权与账号权益，会员歌曲非会员可能只能试听。
+          {t('download.tip')}
         </p>
 
         <div className="dl-modal-foot">
           <span>保存到：{customization.downloadDir || '下载 / yiyunmusic'}</span>
           <div>
-            <button className="settings-btn" onClick={closeDownload}>取消</button>
+            <button className="settings-btn" onClick={closeDownload}>{t('download.cancel')}</button>
             <button
               className="settings-btn primary"
               disabled={!selected || loading || !!downloading}
               onClick={() => selected && confirmDownload(selected)}
-            >{downloading ? '准备中…' : '开始下载'}</button>
+            >{downloading ? t('download.preparing') : t('download.start')}</button>
           </div>
         </div>
       </div>

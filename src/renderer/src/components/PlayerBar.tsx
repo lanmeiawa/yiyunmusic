@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useApp } from '../store'
 import { QUALITY_OPTIONS } from '../types'
+import { qualityLabel } from '../i18n'
 import {
   IconPlay, IconPause, IconPrev, IconNext, IconVolume,
   IconLoop, IconShuffle, IconSingle, IconLyrics, IconMusic, IconVip
@@ -15,7 +16,7 @@ import QueuePanel from './QueuePanel'
 export default function PlayerBar() {
   const {
     player, togglePlay, nextTrack, prevTrack, seek, setVolume, setPlayMode, view, setView,
-    quality, setQuality, currentQuality, currentQualityInfo, isLoggedIn, openLogin, setMessage, profile,
+    quality, setQuality, currentQuality, currentQualityInfo, isLoggedIn, openLogin, setMessage, profile, t, locale,
     desktopLyrics, toggleDesktopLyrics, customization, setCustomization,
     toggleLike, isLiked, downloadTrack, fmMode, fmNext
   } = useApp()
@@ -31,9 +32,10 @@ export default function PlayerBar() {
   // 接口实际返回的音质优先展示（用户选的「无损」可能被降级为「极高」）
   const actualLevel = (currentQualityInfo?.level || '').toLowerCase()
   const actualQuality = QUALITY_OPTIONS.find((q) => q.level === actualLevel)
+  const qName = (level: string) => qualityLabel(locale, level)
   const tagLabel = current
-    ? (currentQuality === '本地' ? '本地' : (actualQuality?.label || activeQuality.label))
-    : activeQuality.label
+    ? (currentQuality === '本地' ? '本地' : qName(actualQuality?.level || quality))
+    : qName(quality)
   const actualDesc = currentQualityInfo
     ? [
         actualQuality?.label || actualLevel,
@@ -54,7 +56,7 @@ export default function PlayerBar() {
       return
     }
     setQuality(level)
-    setMessage(`音质已切换为「${QUALITY_OPTIONS.find((q) => q.level === level)?.label}」，正在重新加载音源`)
+    setMessage(`音质已切换为「${qName(level)}」，正在重新加载音源`)
   }
 
   const modeIcon = playMode === 'loop' ? <IconLoop size={18} />
@@ -84,7 +86,7 @@ export default function PlayerBar() {
         <button
           className={`pb-lyric-btn ${view === 'lyrics' ? 'active' : ''}`}
           onClick={() => setView(view === 'lyrics' ? (current ? 'playlist' : 'discover') : 'lyrics')}
-          title="动态歌词"
+          title={t('player.lyrics')}
         >
           <IconLyrics size={18} />
         </button>
@@ -94,12 +96,12 @@ export default function PlayerBar() {
       <div className="pb-center">
         <div className="pb-controls">
           <button onClick={nextMode} title={modeLabel} className="pb-mode">{modeIcon}</button>
-          <button onClick={prevTrack} title="上一首"><IconPrev size={20} /></button>
+          <button onClick={prevTrack} title={t('player.prev')}><IconPrev size={20} /></button>
           <button className="pb-play" onClick={togglePlay} title={isPlaying ? '暂停' : '播放'}>
             {isPlaying ? <IconPause size={20} /> : <IconPlay size={20} />}
           </button>
-          <button onClick={nextTrack} title="下一首"><IconNext size={20} /></button>
-          <button className="pb-mode" title="播放列表"><IconMusic size={17} /></button>
+          <button onClick={nextTrack} title={t('player.next')}><IconNext size={20} /></button>
+          <button className="pb-mode" title={t('player.queue')}><IconMusic size={17} /></button>
         </div>
         <div className="pb-progress">
           <span className="pb-time">{formatTime(currentTime)}</span>
@@ -125,7 +127,7 @@ export default function PlayerBar() {
           <button
             className={`pb-lyric-btn ${queueOpen ? 'active' : ''}`}
             onClick={() => setQueueOpen((v) => !v)}
-            title="当前播放列表"
+            title={t('player.queue')}
           >
             <IconQueue size={17} />
           </button>
@@ -150,7 +152,7 @@ export default function PlayerBar() {
           className="pb-lyric-btn"
           onClick={() => current && downloadTrack(current)}
           disabled={!current}
-          title="下载当前歌曲"
+          title={t('download.start')}
         >
           <IconDownload size={16} />
         </button>
@@ -165,13 +167,13 @@ export default function PlayerBar() {
           <button
             className={`quality-btn ${rateOpen ? 'open' : ''}`}
             onClick={() => setRateOpen((v) => !v)}
-            title="播放倍速"
+            title={t('player.rate')}
           >
             <IconRate size={17} />
           </button>
           {rateOpen && (
             <div className="quality-menu rate-menu">
-              <div className="quality-menu-title">播放倍速</div>
+              <div className="quality-menu-title">{t('player.rate')}</div>
               {[0.5, 0.75, 1, 1.25, 1.5, 2].map((r) => (
                 <button
                   key={r}
@@ -191,12 +193,12 @@ export default function PlayerBar() {
             onClick={() => { setQualityOpen((v) => !v); setRateOpen(false) }}
             title={`播放音质${actualDesc ? ` · 当前 ${actualDesc}` : ''}`}
           >
-            <span className="quality-tag">{current ? tagLabel : '音质'}</span>
+            <span className="quality-tag">{current ? tagLabel : t('player.quality')}</span>
           </button>
           {qualityOpen && (
             <div className="quality-menu">
               <div className="quality-menu-title">
-                播放音质 {actualDesc && <span>当前 {actualDesc}</span>}
+                {t('player.quality')} {actualDesc && <span>{actualDesc}</span>}
               </div>
               {QUALITY_OPTIONS.map((q) => (
                 <button
@@ -205,7 +207,7 @@ export default function PlayerBar() {
                   onClick={() => pickQuality(q.level, q.vip)}
                 >
                   <span className="quality-option-label">
-                    {q.label}
+                    {qName(q.level)}
                     {q.vip && <em className="quality-vip">VIP</em>}
                   </span>
                   <span className="quality-option-sub">{q.sub}</span>

@@ -64,6 +64,8 @@ export interface Customization {
   shortcuts: ShortcutMap
   /** 搜索历史（最近在前，最多 12 条） */
   searchHistory: string[]
+  /** 界面语言 zh / en */
+  language: 'zh' | 'en'
 }
 
 export const DEFAULT_CUSTOMIZATION: Customization = {
@@ -89,7 +91,8 @@ export const DEFAULT_CUSTOMIZATION: Customization = {
   eqEnabled: true,
   gpuAcceleration: true,
   shortcuts: { ...DEFAULT_SHORTCUTS },
-  searchHistory: []
+  searchHistory: [],
+  language: 'zh'
 }
 
 export interface DesktopLyricsSettings {
@@ -190,6 +193,15 @@ export interface SongUrlResult {
   payed?: boolean
   unavailable?: boolean
   reason?: string
+}
+
+/** 已保存的账号（不含 cookie） */
+export interface AccountItem {
+  id: string
+  nickname: string
+  avatarUrl: string
+  vipType: number
+  addedAt: number
 }
 
 /** 实时探测到的单档音质结果 */

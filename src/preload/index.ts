@@ -13,6 +13,10 @@ const api = {
   qrCheck: (key: string) => ipcRenderer.invoke('auth:qrcheck', key),
   profile: () => ipcRenderer.invoke('auth:profile'),
   logout: () => ipcRenderer.invoke('auth:logout'),
+  // 多账号
+  accountsList: () => ipcRenderer.invoke('accounts:list'),
+  accountsSwitch: (id: string) => ipcRenderer.invoke('accounts:switch', id),
+  accountsRemove: (id: string) => ipcRenderer.invoke('accounts:remove', id),
 
   // 歌曲
   songUrl: (id: number, level?: string) => ipcRenderer.invoke('song:url', id, level),
