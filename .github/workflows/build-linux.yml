@@ -20,12 +20,12 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            args: --win --x64
+            args: --win --x64 --publish never
             path: |
               dist-release/*.exe
             name: windows
           - os: ubuntu-latest
-            args: --linux --x64
+            args: --linux --x64 --publish never
             path: |
               dist-release/*.AppImage
               dist-release/*.deb
