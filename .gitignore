@@ -1,0 +1,10 @@
+node_modules/
+out/
+dist/
+dist-*/
+*.exe
+*.blockmap
+*.log
+.gh-token
+.DS_Store
+Thumbs.db

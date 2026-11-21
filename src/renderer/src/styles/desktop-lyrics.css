@@ -1,0 +1,130 @@
+/* ============ 桌面歌词悬浮窗（逐字动态） ============ */
+html, body, #root { background: transparent !important; }
+
+.desktop-lyrics {
+  width: 100%; height: 100%; position: relative;
+  display: flex; flex-direction: column; justify-content: center;
+  border-radius: 16px; overflow: hidden;
+  background: linear-gradient(135deg, rgba(24, 24, 40, 0.62), rgba(18, 20, 36, 0.7));
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
+  cursor: grab; /* 全窗 JS 拖动（见组件 onMouseDown），不用 CSS app-region */
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  transition: background 0.4s;
+  user-select: none;
+}
+.desktop-lyrics.locked { cursor: default; }
+.dl-bg {
+  position: absolute; inset: -40px; background-size: cover; background-position: center;
+  filter: blur(38px) saturate(1.6); opacity: 0.3; transform: scale(1.2); pointer-events: none;
+}
+.desktop-lyrics::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.38));
+}
+
+/* 顶部拖动把手：视觉提示（拖动为全窗 JS 实现），锁定时隐藏 */
+.dl-grip {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 72px; height: 14px; z-index: 9;
+  pointer-events: none;
+  display: grid; place-items: center;
+  border-radius: 0 0 10px 10px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.dl-grip::before { content: ''; width: 40px; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.4); }
+.desktop-lyrics.locked .dl-grip { opacity: 0; }
+
+/* 顶部工具条 */
+.dl-toolbar {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 8;
+  height: 34px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 12px; opacity: 0; transform: translateY(-6px); transition: 0.2s;
+  background: linear-gradient(180deg, rgba(0,0,0,0.4), transparent);
+}
+.dl-toolbar.show { opacity: 1; transform: translateY(0); }
+.dl-title { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 11px; }
+.dl-song { font-weight: 600; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dl-artist { color: rgba(255,255,255,0.6); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dl-eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
+.dl-eq i { width: 2.5px; height: 4px; background: var(--dl-color); border-radius: 2px; }
+.dl-eq.playing i { animation: eq 0.9s ease-in-out infinite; }
+.dl-eq.playing i:nth-child(2) { animation-delay: 0.25s; }
+.dl-eq.playing i:nth-child(3) { animation-delay: 0.5s; }
+@keyframes eq { 0%,100% { height: 4px; } 50% { height: 12px; } }
+.dl-actions { display: flex; align-items: center; gap: 2px; }
+.dl-actions button {
+  -webkit-app-region: no-drag; min-width: 26px; height: 22px; padding: 0 5px;
+  border-radius: 6px; color: rgba(255,255,255,0.82); font-size: 11px; transition: 0.15s;
+}
+.dl-actions button:hover { background: rgba(255,255,255,0.16); color: #fff; }
+.dl-actions button.active { background: rgba(255,255,255,0.2); }
+.dl-actions button.dl-close:hover { background: #ff5a5f; }
+.dl-color-picker {
+  position: absolute; top: 32px; right: 10px; display: flex; gap: 6px;
+  background: rgba(20,20,32,0.9); padding: 8px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12); box-shadow: var(--shadow-md);
+}
+.dl-color-picker button {
+  -webkit-app-region: no-drag; width: 18px; height: 18px; border-radius: 50%; padding: 0;
+  border: 2px solid transparent; transition: 0.15s;
+}
+.dl-color-picker button.sel { border-color: #fff; transform: scale(1.15); }
+
+/* 歌词区 */
+.dl-body {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 12px 26px; overflow: hidden; -webkit-app-region: no-drag;
+  position: relative; z-index: 2; gap: 2px;
+}
+.dl-line {
+  text-align: center; line-height: 1.35; padding: 2px 0; width: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: 0.4s;
+}
+.dl-line span { color: rgba(255,255,255,0.4); font-weight: 600; }
+.dl-line.next { font-size: 0.66em; }
+.dl-line.next span { color: rgba(255,255,255,0.32); }
+.dl-line.active { font-weight: 800; }
+.dl-line.active .dl-lyric-text { display: inline; }
+.dl-word {
+  font-style: normal;
+  background-image: linear-gradient(to right, var(--dl-color) var(--wf, 0%), rgba(255,255,255,0.45) var(--wf, 0%));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 10px rgba(0,0,0,0.3));
+}
+.dl-trans {
+  display: block; font-size: 0.46em; font-style: normal; font-weight: 500;
+  color: rgba(255,255,255,0.7); margin-top: 3px;
+}
+.dl-placeholder { color: rgba(255,255,255,0.45); font-size: 0.6em; text-align: center; }
+
+/* 主题联动 */
+:root[data-theme="mitia"] .desktop-lyrics {
+  background: linear-gradient(135deg, rgba(34, 28, 78, 0.66), rgba(20, 24, 60, 0.72));
+  border-color: rgba(160, 140, 255, 0.3);
+}
+/* 米提亚主题：桌面歌词窗叠加 mitia-menu 淡淡纹理，
+   纹理放在 ::before（z-index:0），位于歌词层（.dl-body z-index:2）之下不遮挡文字 */
+:root[data-theme="mitia"] .desktop-lyrics::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image: url('../assets/mitia-menu.png');
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+  opacity: 0.12;
+}
+
+/* ============ 自适应行数：按窗口高度显示 1~6 行 ============ */
+/* 单行：当前行占满且字号提升，隐藏翻译以留足空间 */
+.dl-rows-1 .dl-line.active .dl-lyric-text { font-size: 1.18em; }
+.dl-rows-1 .dl-line.active .dl-trans { display: none; }
+.dl-rows-1 .dl-body { gap: 0; }
+/* 两到三行：当前行略微收敛，后续句弱化 */
+.dl-rows-2 .dl-line.active .dl-lyric-text,
+.dl-rows-3 .dl-line.active .dl-lyric-text { font-size: 1.02em; }
+/* 四行以上：增加行距、后续句更小，最大化可读行数 */
+.dl-rows-4 .dl-body, .dl-rows-5 .dl-body, .dl-rows-6 .dl-body {
+  gap: 3px; padding-top: 16px; padding-bottom: 16px;
+}
+.dl-rows-4 .dl-line.next, .dl-rows-5 .dl-line.next, .dl-rows-6 .dl-line.next { font-size: 0.6em; }

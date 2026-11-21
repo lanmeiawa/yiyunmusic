@@ -1,0 +1,635 @@
+@import './components.css';
+
+/* ============ 亦云音乐 · 全局样式（多主题） ============ */
+:root,
+:root[data-theme="light"] {
+  --primary: #ff5a7a;
+  --primary-soft: #ff7d95;
+  --primary-gradient: linear-gradient(135deg, #ff6b8b 0%, #ff8f6b 100%);
+  --primary-tint: #fff0f3;
+  --bg: #ffffff;
+  --bg-body: #f7f8fc;
+  --bg-side: #fafbfe;
+  --text: #2b2d42;
+  --text-2: #6b7080;
+  --text-3: #a3a7b5;
+  --border: #eef0f5;
+  --hover: #f0f2f8;
+  --card: #ffffff;
+  --input-bg: #f2f4f9;
+  --hero-bg: linear-gradient(120deg, #fff0f3 0%, #fff6f0 55%, #fef0f7 100%);
+  --shadow-sm: 0 2px 10px rgba(40, 45, 80, 0.05);
+  --shadow-md: 0 8px 30px rgba(40, 45, 80, 0.09);
+  --shadow-lg: 0 20px 60px rgba(40, 45, 80, 0.16);
+  --radius: 14px;
+  --titlebar-h: 54px;
+  --playerbar-h: 84px;
+  --lyrics-veil: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,248,250,0.85) 45%, rgba(255,255,255,0.95));
+  --lyrics-bg: #f3f4f8;
+  --cover-grad: linear-gradient(135deg, #ffd3dd, #ffe6d0);
+  --skeleton: linear-gradient(90deg, #f0f1f5, #f8f9fb, #f0f1f5);
+  --shadow-primary: 0 6px 16px rgba(255, 107, 139, 0.3);
+  --shadow-primary-lg: 0 10px 24px rgba(255, 107, 139, 0.4);
+  --lyric-idle-c: rgba(43,45,66,0.26);
+  --lyric-lit-c: #2b2d42;
+  --scrollbar-thumb: #dfe2ea;
+  --scrollbar-thumb-hover: #c9cdd9;
+  --track: #e8eaf0;
+}
+
+/* 暗夜主题 */
+:root[data-theme="dark"] {
+  --primary: #ff6b8b;
+  --primary-soft: #ff94aa;
+  --primary-gradient: linear-gradient(135deg, #ff6b8b 0%, #c86bff 100%);
+  --primary-tint: rgba(255, 107, 139, 0.16);
+  --bg: #1c1d2b;
+  --bg-body: #161724;
+  --bg-side: #1a1b29;
+  --text: #eef0f8;
+  --text-2: #a9aec4;
+  --text-3: #6f7490;
+  --border: #2c2e42;
+  --hover: #262840;
+  --card: #22243a;
+  --input-bg: #26283c;
+  --hero-bg: linear-gradient(120deg, #2a2140 0%, #24203e 55%, #1f2745 100%);
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.38);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
+  --lyrics-veil: linear-gradient(180deg, rgba(20,20,34,0.55), rgba(22,23,38,0.82) 45%, rgba(22,23,36,0.94));
+  --lyrics-bg: #161724;
+  --cover-grad: linear-gradient(135deg, #3a3a5c, #2b2b48);
+  --skeleton: linear-gradient(90deg, #262840, #30324e, #262840);
+  --shadow-primary: 0 6px 16px rgba(255, 107, 139, 0.28);
+  --shadow-primary-lg: 0 10px 24px rgba(255, 107, 139, 0.38);
+  --lyric-idle-c: rgba(238,240,248,0.35);
+  --lyric-lit-c: #ffffff;
+  --scrollbar-thumb: #3a3c56;
+  --scrollbar-thumb-hover: #4a4d6b;
+  --track: #34364f;
+}
+
+/* 米提亚 · 原神二次元主题（蓝紫金） */
+:root[data-theme="mitia"] {
+  --primary: #8b7cf6;
+  --primary-soft: #b3a6ff;
+  --primary-gradient: linear-gradient(135deg, #7b6ef6 0%, #b78bff 55%, #e0b46b 100%);
+  --primary-tint: rgba(139, 124, 246, 0.16);
+  --bg: #f7f5ff;
+  --bg-body: #efecfb;
+  --bg-side: #f1eeff;
+  --text: #2a2550;
+  --text-2: #6a6497;
+  --text-3: #aca6cc;
+  --border: #e3def7;
+  --hover: #e9e4fb;
+  --card: rgba(255, 255, 255, 0.72);
+  --input-bg: #eae6fa;
+  --hero-bg: linear-gradient(120deg, #e8e2ff 0%, #f3eaff 55%, #fdf3e2 100%);
+  --shadow-sm: 0 2px 12px rgba(90, 70, 180, 0.08);
+  --shadow-md: 0 8px 30px rgba(90, 70, 180, 0.14);
+  --shadow-lg: 0 20px 60px rgba(90, 70, 180, 0.22);
+  --lyrics-veil: linear-gradient(180deg, rgba(233,228,255,0.5), rgba(238,230,255,0.82) 45%, rgba(245,240,255,0.94));
+  --lyrics-bg: #efecfb;
+  --cover-grad: linear-gradient(135deg, #d9d0ff, #ffe6c4);
+  --skeleton: linear-gradient(90deg, #e9e4fb, #f3efff, #e9e4fb);
+  --shadow-primary: 0 6px 16px rgba(139, 124, 246, 0.34);
+  --shadow-primary-lg: 0 10px 24px rgba(139, 124, 246, 0.44);
+  --lyric-idle-c: rgba(90,75,150,0.4);
+  --lyric-lit-c: #5b4bb8;
+  --scrollbar-thumb: #c9bff0;
+  --scrollbar-thumb-hover: #b3a6e8;
+  --track: #ded7f5;
+}
+
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--text);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 主题切换平滑过渡 */
+.app-root, .titlebar, .sidebar, .content, .playerbar, .discover-hero, .nav-item, .playlist-item {
+  transition: background-color 0.35s, color 0.3s, border-color 0.35s;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { width: 100%; height: 100%; overflow: hidden; }
+body { background: var(--bg-body); user-select: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; outline: none; }
+img { display: block; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+
+.app-root {
+  width: 100%; height: 100%; display: flex; flex-direction: column;
+  background: var(--bg-body); position: relative;
+}
+
+/* ============ 标题栏 ============ */
+.titlebar {
+  height: var(--titlebar-h); min-height: var(--titlebar-h);
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg); border-bottom: 1px solid var(--border);
+  padding-left: 18px; position: relative; z-index: 20;
+}
+.titlebar-drag { -webkit-app-region: drag; display: flex; align-items: center; gap: 16px; height: 100%; flex: 1; }
+.titlebar-brand { display: flex; align-items: center; gap: 9px; }
+.brand-logo {
+  width: 28px; height: 28px; border-radius: 9px; color: #fff;
+  background: var(--primary-gradient); display: grid; place-items: center;
+  box-shadow: var(--shadow-primary);
+}
+.brand-logo.custom { background: transparent; box-shadow: none; overflow: hidden; }
+.brand-logo.custom img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.brand-name { font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
+.titlebar-back {
+  -webkit-app-region: no-drag; width: 28px; height: 28px; border-radius: 8px;
+  display: grid; place-items: center; color: var(--text-2); transition: 0.18s;
+}
+.titlebar-back:hover { background: var(--bg-body); color: var(--primary); }
+.titlebar-controls { -webkit-app-region: no-drag; display: flex; height: 100%; }
+.titlebar-controls button {
+  width: 46px; height: 100%; display: grid; place-items: center;
+  color: var(--text-2); transition: 0.18s;
+}
+.titlebar-controls button:hover { background: var(--bg-body); color: var(--text); }
+.titlebar-controls button.close:hover { background: #ff5a5f; color: #fff; }
+
+/* 标题栏搜索框 */
+.titlebar-search {
+  -webkit-app-region: no-drag;
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px;
+  width: 320px; height: 32px; padding: 0 13px;
+  background: var(--input-bg); border: 1px solid transparent; border-radius: 18px;
+  color: var(--text-3); transition: 0.2s;
+}
+.titlebar-search:focus-within {
+  border-color: var(--primary); background: var(--bg);
+  box-shadow: 0 0 0 3px var(--primary-tint);
+}
+.titlebar-search svg { flex-shrink: 0; }
+.titlebar-search input {
+  flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+  color: var(--text); font-size: 12.5px;
+}
+.titlebar-search input::placeholder { color: var(--text-3); }
+
+/* 标题栏工具区 */
+.titlebar-tools { -webkit-app-region: no-drag; display: flex; align-items: center; gap: 4px; margin-right: 6px; }
+.tb-tool {
+  width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center;
+  color: var(--text-2); transition: 0.18s;
+}
+.tb-tool:hover { background: var(--hover); color: var(--primary); }
+.tb-tool.active { background: var(--primary-tint); color: var(--primary); }
+
+/* 主题切换下拉 */
+.theme-switcher { position: relative; }
+.theme-menu {
+  position: absolute; top: 40px; right: 0; width: 208px; z-index: 100;
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: var(--shadow-lg); padding: 8px; backdrop-filter: blur(16px);
+  animation: themeMenuIn 0.18s ease;
+}
+@keyframes themeMenuIn { from { opacity: 0; transform: translateY(-6px) scale(0.97); } to { opacity: 1; transform: none; } }
+.theme-menu-title { font-size: 11px; color: var(--text-3); padding: 4px 10px 8px; font-weight: 600; }
+.theme-option {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 10px; text-align: left; transition: 0.15s;
+}
+.theme-option:hover { background: var(--hover); }
+.theme-option.active { background: var(--primary-tint); }
+.theme-option-icon {
+  width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex-shrink: 0;
+}
+.theme-option-icon.light { background: linear-gradient(135deg, #ffe8ee, #fff0d8); color: #ff7d5a; }
+.theme-option-icon.dark { background: linear-gradient(135deg, #3a3a5c, #24243e); color: #cfc7ff; }
+.theme-option-icon.mitia { background: linear-gradient(135deg, #8b7cf6, #e0b46b); color: #fff; }
+.theme-option-text { flex: 1; display: flex; flex-direction: column; }
+.theme-option-text b { font-size: 13px; font-weight: 600; color: var(--text); }
+.theme-option-text small { font-size: 10px; color: var(--text-3); margin-top: 1px; }
+.theme-check { color: var(--primary); font-weight: 700; font-size: 14px; }
+
+/* ============ 主体布局 ============ */
+.app-body { flex: 1; display: flex; min-height: 0; }
+
+/* 侧边栏 */
+.sidebar {
+  width: 212px; min-width: 212px; background: var(--bg-side);
+  border-right: 1px solid var(--border); display: flex; flex-direction: column;
+  padding: 16px 12px 12px;
+}
+.side-nav { display: flex; flex-direction: column; gap: 4px; }
+.nav-item {
+  display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 14px;
+  border-radius: 10px; color: var(--text-2); font-size: 14px; font-weight: 500;
+  transition: 0.18s; text-align: left; width: 100%;
+}
+.nav-item:hover { background: var(--hover); color: var(--text); }
+.nav-item.active { background: var(--primary-tint); color: var(--primary); font-weight: 600; }
+.nav-item.active svg { color: var(--primary); }
+
+.side-section-title {
+  margin: 22px 10px 10px; display: flex; justify-content: space-between;
+  align-items: center; font-size: 12px; color: var(--text-3); font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.side-count {
+  background: var(--hover); color: var(--text-2); border-radius: 10px;
+  padding: 1px 7px; font-size: 11px;
+}
+.playlist-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+.playlist-item {
+  display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 10px;
+  border-radius: 9px; color: var(--text-2); font-size: 13px; transition: 0.16s;
+  width: 100%; text-align: left;
+}
+.playlist-item:hover { background: var(--hover); color: var(--text); }
+.playlist-item.active { background: var(--primary-tint); color: var(--primary); }
+.playlist-item-icon {
+  width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center;
+  background: linear-gradient(135deg, #ffd3dd, #ffe6d0); color: var(--primary); flex-shrink: 0;
+}
+.playlist-item-icon.liked { background: linear-gradient(135deg, #ff6b8b, #ff9a6b); color: #fff; }
+.playlist-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-empty { padding: 20px 10px; color: var(--text-3); font-size: 12px; text-align: center; }
+
+.side-user {
+  margin-top: 10px; padding: 12px 10px 4px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.user-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: #eee; }
+.user-meta { flex: 1; min-width: 0; }
+.user-name {
+  font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;
+  min-width: 0;
+}
+.user-name .user-nickname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.vip-badge {
+  display: inline-flex; align-items: center; gap: 2px; font-size: 9px; color: #b8860b;
+  background: linear-gradient(135deg, #fff3d0, #ffe3a8); padding: 1px 5px; border-radius: 5px;
+  flex-shrink: 0;
+}
+.logout-btn { font-size: 11px; color: var(--text-3); margin-top: 3px; padding: 0; }
+.logout-btn:hover { color: var(--primary); }
+
+/* 内容区 */
+.content { flex: 1; min-width: 0; overflow-y: auto; position: relative; background: var(--bg); }
+
+/* ============ 全局控件主题化（二次元/暗色主题全覆盖） ============ */
+/* 更完整的主题切换过渡 */
+input, button, .album-card, .pl-row, .quality-option, .theme-option,
+.pb-slider, .qr-wrap, .login-card, .lyrics-badge, .now-cover, .row-cover {
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+/* 滑块轨道 / thumb 跟随主题 */
+.pb-slider::-moz-range-thumb { background: var(--card); border: 2.5px solid var(--primary); }
+/* 通用 chip / tag 使用主题色边框 */
+.fee-tag, .pb-vip, .quality-vip { border: 1px solid rgba(184,134,11,0.25); }
+/* 二次元主题：星空背景延伸到标题栏与侧边栏 */
+:root[data-theme="mitia"] .titlebar,
+:root[data-theme="mitia"] .sidebar,
+:root[data-theme="mitia"] .playerbar {
+  background-image: radial-gradient(1.5px 1.5px at 20% 40%, rgba(139,124,246,0.25), transparent),
+                    radial-gradient(1.5px 1.5px at 75% 70%, rgba(224,180,107,0.25), transparent);
+  background-size: 260px 200px;
+}
+/* 二次元主题：品牌 logo 与当前行歌词带淡淡光晕 */
+:root[data-theme="mitia"] .lyric-line.active .lyric-main {
+  filter: drop-shadow(0 0 16px rgba(139,124,246,0.45));
+}
+:root[data-theme="mitia"] .brand-logo,
+:root[data-theme="mitia"] .now-cover { box-shadow: 0 8px 22px rgba(139,124,246,0.4); }
+/* 二次元主题：滚动条 */
+:root[data-theme="mitia"] ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); }
+/* 暗色主题：登录弹窗二维码区域可见 */
+:root[data-theme="dark"] .qr-success-mask { background: rgba(28,29,43,0.94); }
+:root[data-theme="dark"] .placeholder-note { background: var(--card); }
+
+/* ============ 米提亚 · 全屏壁纸覆盖 + 控件定制素材 ============ */
+/* 壁纸背景层：fixed 定位铺满整个应用，位于所有内容之下；变量由 App.tsx 在 mitia 主题下注入 */
+.app-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: var(--mitia-wallpaper, none);
+  background-size: cover;
+  /* 垂直偏上定位：宽窗口/矮窗口下 cover 裁切时优先保住角色头部，构图更居中平衡 */
+  background-position: center 30%; background-repeat: no-repeat;
+}
+/* 主体内容抬升到壁纸之上；仅 mitia 作用域，light/dark 不受影响 */
+:root[data-theme="mitia"] .app-root { background: transparent; }
+:root[data-theme="mitia"] .app-body { position: relative; z-index: 1; }
+
+/* 标题栏与播放条：mitia-topbar 光带纹理（素材自带 0.6 alpha）+ 轻毛玻璃。
+   素材 alpha 负责透出壁纸，这里只叠极淡底色提亮文字，避免多重半透明把壁纸盖实 */
+:root[data-theme="mitia"] .titlebar,
+:root[data-theme="mitia"] .playerbar {
+  background-color: rgba(247, 245, 255, 0.26);
+  background-image: var(--mitia-topbar, none);
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+}
+
+/* 侧边栏：mitia-sidebar 星轨纹理（素材自带 0.6 alpha）+ 轻毛玻璃 */
+:root[data-theme="mitia"] .sidebar {
+  background-color: rgba(241, 238, 255, 0.3);
+  background-image: var(--mitia-sidebar, none);
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+}
+
+/* 内容区：半透明渐变让壁纸清晰透出（不做模糊，保留角色细节） */
+:root[data-theme="mitia"] .content {
+  background-color: transparent;
+  background-image: linear-gradient(160deg, rgba(247,245,255,0.58) 0%, rgba(239,234,255,0.5) 100%);
+}
+
+/* 专辑/歌单/列表封面占位：mitia-card 纹理。
+   真实封面由上层 img 覆盖显示，纹理仅在加载前/无封面时透出 */
+:root[data-theme="mitia"] .album-cover,
+:root[data-theme="mitia"] .pl-cover,
+:root[data-theme="mitia"] .row-cover,
+:root[data-theme="mitia"] .now-cover,
+:root[data-theme="mitia"] .pb-cover {
+  background-color: rgba(233, 228, 255, 0.3);
+  background-image: var(--mitia-card, none);
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+}
+
+/* 主题菜单 / 音质菜单：mitia-menu 深蓝紫毛玻璃纹理。
+   局部覆盖文字变量，保证深蓝紫背景上的文字清晰可读 */
+:root[data-theme="mitia"] .theme-menu,
+:root[data-theme="mitia"] .quality-menu {
+  --text: #f5f2ff; --text-2: #d6ccff; --text-3: #b3a8e0;
+  --hover: rgba(255,255,255,0.14); --primary-tint: rgba(179,166,255,0.24);
+  --border: rgba(179,166,255,0.3);
+  background-color: rgba(30, 26, 60, 0.78);
+  background-image: var(--mitia-menu, none);
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+}
+
+/* 登录弹窗：星空场景图放在外层 overlay，卡片主体保持半透明浅色，确保二维码清晰可读 */
+:root[data-theme="mitia"] .login-overlay {
+  background-color: rgba(26, 22, 52, 0.5);
+  background-image: var(--mitia-login, none);
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+}
+:root[data-theme="mitia"] .login-card {
+  background-color: rgba(247, 245, 255, 0.92);
+  backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+}
+:root[data-theme="mitia"] .login-features { background: rgba(233, 228, 255, 0.7); }
+
+/* 立绘装饰透明度降低，让全屏壁纸角色成为视觉主体 */
+:root[data-theme="mitia"] .mitia-deco { opacity: 0.3; }
+
+/* ============ 自定义主题（用户上传背景图 + 自定义主色） ============ */
+:root[data-theme="custom"] {
+  /* 基于 dark 的中性基础，主色由 JS 注入 --primary 覆盖 */
+  --bg: #15151f;
+  --bg-2: #1b1b28;
+  --card: rgba(34, 34, 52, 0.72);
+  --hover: rgba(255, 255, 255, 0.07);
+  --text: #f2f0f8;
+  --text-2: #c9c4dc;
+  --text-3: #928dab;
+  --border: rgba(255, 255, 255, 0.1);
+  --input-bg: rgba(255, 255, 255, 0.06);
+  --lyrics-veil: linear-gradient(180deg, rgba(20,20,32,0.35), rgba(20,20,32,0.6) 45%, rgba(20,20,32,0.85));
+  --lyrics-bg: #15151f;
+  --cover-grad: linear-gradient(135deg, #33334d, #26263a);
+  --skeleton: linear-gradient(90deg, #262638, #31314a, #262638);
+  --lyric-idle-c: rgba(240,238,248,0.3);
+  --lyric-lit-c: #ffffff;
+  --track: rgba(255,255,255,0.12);
+}
+/* custom 全屏背景：图片由 JS 注入 --custom-bg-image */
+:root[data-theme="custom"] .app-bg {
+  background-image: var(--custom-bg-image, none);
+  filter: blur(var(--custom-bg-blur, 12px)) saturate(1.1);
+  transform: scale(1.08); /* 抵消 blur 边缘白边 */
+}
+/* 遮罩暗度可调 */
+:root[data-theme="custom"] .app-bg::after {
+  content: ''; position: absolute; inset: 0; background: rgba(0,0,0,var(--custom-bg-dim, 0.45));
+}
+:root[data-theme="custom"] .app-root { background: transparent; }
+:root[data-theme="custom"] .app-body { position: relative; z-index: 1; }
+:root[data-theme="custom"] .titlebar,
+:root[data-theme="custom"] .playerbar {
+  background-color: rgba(21, 21, 31, 0.5);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+}
+:root[data-theme="custom"] .sidebar {
+  background-color: rgba(21, 21, 31, 0.55);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+}
+:root[data-theme="custom"] .content {
+  background-color: transparent;
+  background-image: linear-gradient(160deg, rgba(18,18,28,0.42), rgba(18,18,28,0.55));
+}
+
+/* ============ 侧边栏紧凑模式（折叠） ============ */
+:root.sidebar-collapsed .sidebar { width: 64px; min-width: 64px; }
+:root.sidebar-collapsed .sidebar .nav-item span,
+:root.sidebar-collapsed .sidebar .side-section-title,
+:root.sidebar-collapsed .sidebar .playlist-item-name,
+:root.sidebar-collapsed .sidebar .side-count,
+:root.sidebar-collapsed .sidebar .side-empty,
+:root.sidebar-collapsed .sidebar .playlist-item-icon { display: none; }
+:root.sidebar-collapsed .sidebar .playlist-item { justify-content: center; padding-left: 0; padding-right: 0; }
+:root.sidebar-collapsed .sidebar .side-user { flex-direction: column; gap: 6px; }
+:root.sidebar-collapsed .sidebar .user-meta { display: none; }
+:root.sidebar-collapsed .sidebar .nav-item { justify-content: center; }
+
+/* ============ 复古主题（千千静听 / Win98-2000 风格，复古版专用） ============ */
+[data-theme="retro"] {
+  --bg: #c3c3c3;
+  --card: #d4d0c8;
+  --card-t: #d4d0c8;
+  --border: #808080;
+  --text: #000000;
+  --text-2: #222222;
+  --text-3: #555555;
+  --primary: #000080;
+  --primary-tint: #d4d0c8;
+  --primary-gradient: linear-gradient(180deg, #1084d0, #000080);
+  --hover: #dfdfdf;
+  --input-bg: #ffffff;
+  --radius: 0px;
+  --radius-sm: 0px;
+  --shadow: none;
+  --shadow-lg: none;
+  --shadow-primary: none;
+  --shadow-primary-lg: none;
+  --skeleton: #bdbdbd;
+}
+[data-theme="retro"] * { border-radius: 0 !important; box-shadow: none !important; backdrop-filter: none !important; }
+[data-theme="retro"] body,
+[data-theme="retro"] .app,
+[data-theme="retro"] .sidebar,
+[data-theme="retro"] .content {
+  font-family: 'SimSun', 'MS Song', 'Tahoma', serif;
+  font-size: 12px;
+}
+/* 窗口化 3D 边框：所有卡片/按钮凸起效果 */
+[data-theme="retro"] .settings-card,
+[data-theme="retro"] .album-card,
+[data-theme="retro"] .profile-hero,
+[data-theme="retro"] .quick-card {
+  border: 2px outset #fff !important;
+  background: #d4d0c8 !important;
+}
+[data-theme="retro"] button,
+[data-theme="retro"] .settings-btn,
+[data-theme="retro"] .pl-refresh,
+[data-theme="retro"] .play-all,
+[data-theme="retro"] .radio-tab {
+  background: #d4d0c8 !important;
+  border: 2px outset #fff !important;
+  color: #000 !important;
+  font-family: 'SimSun', serif;
+}
+[data-theme="retro"] button:active { border: 2px inset #fff !important; }
+[data-theme="retro"] .play-all,
+[data-theme="retro"] .quick-card .quick-play { background: #000080 !important; color: #fff !important; }
+[data-theme="retro"] .sidebar { background: #d4d0c8 !important; border-right: 2px inset #fff !important; }
+[data-theme="retro"] .sidebar .nav-item.active {
+  background: #000080 !important; color: #fff !important;
+  border: 2px inset #fff !important;
+}
+[data-theme="retro"] .titlebar {
+  background: linear-gradient(180deg, #1084d0, #000080) !important;
+  border-bottom: 2px outset #fff !important;
+}
+[data-theme="retro"] .titlebar .brand-name,
+[data-theme="retro"] .titlebar .titlebar-brand { color: #fff !important; font-family: 'SimSun', serif; }
+[data-theme="retro"] .titlebar .titlebar-search input,
+[data-theme="retro"] input {
+  border: 2px inset #fff !important;
+  background: #fff !important;
+  font-family: 'SimSun', serif;
+  font-size: 12px;
+}
+[data-theme="retro"] .playerbar { background: #d4d0c8 !important; border-top: 2px outset #fff !important; }
+[data-theme="retro"] .content { background: #c3c3c3 !important; }
+[data-theme="retro"] .album-cover, [data-theme="retro"] .row-cover { border: 1px solid #808080 !important; }
+[data-theme="retro"] .pl-row:hover { background: #00008018 !important; }
+[data-theme="retro"] .pl-row.current { background: #b6b2aa !important; }
+[data-theme="retro"] .app-bg { display: none !important; }
+[data-theme="retro"] .toast {
+  background: #ffffe1 !important; color: #000 !important; border: 1px solid #000 !important;
+  font-family: 'SimSun', serif;
+}
+
+/* ==================== 全局液态玻璃（Liquid Glass）==================== */
+/* 玻璃变量：各主题自适应半透明底色 */
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-bg-strong: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.55);
+  --glass-highlight: rgba(255, 255, 255, 0.35);
+}
+[data-theme="dark"] {
+  --glass-bg: rgba(28, 28, 42, 0.5);
+  --glass-bg-strong: rgba(30, 30, 46, 0.66);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.06);
+}
+[data-theme="mitia"] {
+  --glass-bg: rgba(32, 30, 60, 0.46);
+  --glass-bg-strong: rgba(36, 34, 68, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.08);
+}
+[data-theme="light"] .glass-lights .orb { opacity: 0.26; }
+[data-theme="custom"] {
+  --glass-bg: rgba(24, 24, 34, 0.46);
+  --glass-bg-strong: rgba(28, 28, 40, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.08);
+}
+
+/* 统一玻璃质感：侧栏 / 标题栏 / 播放条 / 各类卡片面板 */
+.sidebar,
+.titlebar,
+.playerbar,
+.settings-card,
+.album-card,
+.quick-card,
+.profile-hero,
+.queue-panel,
+.atpl-menu,
+.search-suggest-panel,
+.comments-panel,
+.radio-tab {
+  background: var(--glass-bg) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  backdrop-filter: blur(22px) saturate(1.4);
+  border: 1px solid var(--glass-border) !important;
+}
+/* 玻璃高光描边（顶部一条亮边，模拟玻璃折射） */
+.titlebar,
+.sidebar,
+.playerbar,
+.settings-card,
+.quick-card,
+.profile-hero {
+  position: relative;
+}
+.titlebar::after,
+.sidebar::after,
+.playerbar::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glass-highlight), transparent);
+  pointer-events: none;
+}
+
+/* 液态玻璃流光动画：全局光斑层，缓慢漂移 + 呼吸 */
+.glass-lights {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.glass-lights .orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.5;
+  will-change: transform;
+}
+.glass-lights .orb-a {
+  width: 46vw; height: 46vw;
+  background: radial-gradient(circle, rgba(124, 108, 255, 0.5), transparent 65%);
+  top: -12vw; left: -8vw;
+  animation: drift-a 26s ease-in-out infinite alternate;
+}
+.glass-lights .orb-b {
+  width: 40vw; height: 40vw;
+  background: radial-gradient(circle, rgba(255, 123, 169, 0.42), transparent 65%);
+  bottom: -14vw; right: -8vw;
+  animation: drift-b 32s ease-in-out infinite alternate;
+}
+.glass-lights .orb-c {
+  width: 30vw; height: 30vw;
+  background: radial-gradient(circle, rgba(90, 169, 255, 0.4), transparent 65%);
+  top: 40%; left: 55%;
+  animation: drift-c 38s ease-in-out infinite alternate;
+}
+@keyframes drift-a { to { transform: translate(18vw, 14vh) scale(1.15); } }
+@keyframes drift-b { to { transform: translate(-16vw, -12vh) scale(1.1); } }
+@keyframes drift-c { to { transform: translate(-20vw, 10vh) scale(1.2); } }
+@media (prefers-reduced-motion: reduce) {
+  .glass-lights .orb { animation: none; }
+}
