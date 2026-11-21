@@ -4,10 +4,10 @@
 
 ## 下载
 
-前往 [Releases](https://github.com/lanmeiawa/yiyun-music/releases) 下载最新版：
+前往 [Releases](https://github.com/lanmeiawa/yiyunmusic/releases) 下载最新版：
 
-- **亦云音乐 Setup 1.0.0.exe** — 安装版（可自定义安装目录、自动创建快捷方式）
-- **亦云音乐-便携版.exe** — 免安装，双击即用，可放 U 盘携带
+- **yiyunmusic-Setup-1.0.1.exe** — 安装版（可自定义安装目录、自动创建快捷方式）
+- **yiyunmusic-portable-1.0.1.exe** — 免安装，双击即用，可放 U 盘携带
 
 > Windows 10 / 11 x64。应用未做代码签名，首次运行若出现 SmartScreen 提示，选择「更多信息 → 仍要运行」即可。
 
@@ -72,8 +72,8 @@ npm run dist           # 打包：NSIS 安装包 + 便携版 exe，输出到 dis
 
 打包完成后，`dist-release/` 目录会有两个文件：
 
-1. **亦云音乐 Setup 1.0.0.exe** — 安装包，双击安装（可自定义安装目录、自动创建桌面快捷方式和开始菜单项），安装后从桌面快捷方式启动
-2. **亦云音乐-便携版.exe** — 免安装便携版，双击即可运行，可放U盘随身携带
+1. **yiyunmusic-Setup-1.0.1.exe** — 安装包，双击安装（可自定义安装目录、自动创建桌面快捷方式和开始菜单项），安装后从桌面快捷方式启动
+2. **yiyunmusic-portable-1.0.1.exe** — 免安装便携版，双击即可运行，可放U盘随身携带
 
 > 本项目启动脚本 `scripts/launch.js` 会清除环境变量 `ELECTRON_RUN_AS_NODE`，
 > 避免在 WorkBuddy 等 Electron 宿主环境内启动时被当作纯 Node 进程。
