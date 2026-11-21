@@ -1,6 +1,6 @@
 {
-  "name": "yiyun-music",
-  "version": "1.0.0",
+  "name": "yiyunmusic",
+  "version": "1.0.1",
   "private": true,
   "description": "亦云音乐 - 简洁明亮的网易云音乐第三方桌面客户端，主打动态歌词",
   "main": "./out/main/index.js",
@@ -69,6 +69,7 @@
       "icon": "build/icon.png"
     },
     "nsis": {
+      "artifactName": "yiyunmusic-Setup-${version}.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
@@ -81,7 +82,7 @@
       "language": "2052"
     },
     "portable": {
-      "artifactName": "亦云音乐-便携版.exe"
+      "artifactName": "yiyunmusic-portable-${version}.${ext}"
     }
   }
 }
