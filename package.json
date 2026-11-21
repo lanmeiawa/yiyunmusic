@@ -1,6 +1,6 @@
 {
   "name": "yiyunmusic",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "description": "亦云音乐 - 简洁明亮的网易云音乐第三方桌面客户端，主打动态歌词",
   "main": "./out/main/index.js",

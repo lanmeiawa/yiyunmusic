@@ -8,3 +8,6 @@ dist-*/
 .gh-token
 .DS_Store
 Thumbs.db
+certs/
+*.pfx
+*.pem
