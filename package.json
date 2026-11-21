@@ -34,7 +34,6 @@
   },
   "build": {
     "appId": "com.yiyun.music",
-    "publish": "never",
     "productName": "yiyunmusic",
     "copyright": "Copyright © 2026 yiyunmusic",
     "directories": {
