@@ -1,6 +1,6 @@
 # yiyunmusic · NetEase Cloud Music desktop client
 
-[简体中文](README.md) | English
+[简体中文](README.md) | English · [Changelog](CHANGELOG.md)
 
 A third-party NetEase Cloud Music desktop client built with **Electron + React + TypeScript + NeteaseCloudMusicApi**, focused on **live lyrics** and a highly customizable interface.
 
