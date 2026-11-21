@@ -1,6 +1,6 @@
 {
   "name": "yiyunmusic",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "private": true,
   "description": "亦云音乐 - 简洁明亮的网易云音乐第三方桌面客户端，主打动态歌词",
   "main": "./out/main/index.js",
@@ -79,7 +79,7 @@
         "zh_CN",
         "en_US"
       ],
-      "language": "2052"
+      "include": "build/installer.nsh"
     },
     "portable": {
       "artifactName": "yiyunmusic-portable-${version}.${ext}"

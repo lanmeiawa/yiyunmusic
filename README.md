@@ -8,10 +8,16 @@
 
 前往 [Releases](https://github.com/lanmeiawa/yiyunmusic/releases) 下载最新版：
 
-- **yiyunmusic-Setup-2.0.0.exe** — 安装版（可自定义安装目录、自动创建快捷方式）
-- **yiyunmusic-portable-2.0.0.exe** — 免安装，双击即用，可放 U 盘携带
+- **yiyunmusic-Setup-2.0.1.exe** — 安装版（可自定义安装目录、自动创建快捷方式）
+- **yiyunmusic-portable-2.0.1.exe** — 免安装，双击即用，可放 U 盘携带
 
 > Windows 10 / 11 x64。
+
+## 升级与数据迁移
+
+安装新版时会自动扫描旧版用户数据目录（`%APPDATA%\亦云音乐`、`%APPDATA%\yiyun-music`），把登录态、账号列表、个性化设置、自定义图标与背景同步到新版，无需重新扫码登录。
+
+如果安装阶段未能迁移（例如数据目录被手动移动），应用首次启动时还会再尝试一次；新版已有配置时不会覆盖。
 
 ## 代码签名
 
