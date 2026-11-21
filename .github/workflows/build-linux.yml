@@ -2,6 +2,11 @@ name: Build & Release
 
 on:
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: '要发布的 Release tag（例如 v2.0.3）'
+        required: false
+        default: ''
   push:
     tags:
       - 'v*'
@@ -16,11 +21,15 @@ jobs:
         include:
           - os: windows-latest
             args: --win --x64
-            path: dist-release/*.exe
+            path: |
+              dist-release/*.exe
             name: windows
           - os: ubuntu-latest
             args: --linux --x64
-            path: dist-release/*
+            path: |
+              dist-release/*.AppImage
+              dist-release/*.deb
+              dist-release/*.tar.gz
             name: linux
     runs-on: ${{ matrix.os }}
     steps:
@@ -43,7 +52,6 @@ jobs:
       - name: Package
         run: npx electron-builder ${{ matrix.args }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
 
       - name: Upload artifacts
@@ -55,7 +63,7 @@ jobs:
 
   release:
     needs: build
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || inputs.tag_name != ''
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -64,9 +72,19 @@ jobs:
           path: artifacts
           merge-multiple: true
 
+      - name: List release files
+        run: find artifacts -maxdepth 2 -type f -printf '%p %s bytes\n'
+
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3.0.4
         with:
-          files: artifacts/**
+          tag_name: ${{ inputs.tag_name || github.ref_name }}
+          files: |
+            artifacts/*.exe
+            artifacts/*.AppImage
+            artifacts/*.deb
+            artifacts/*.tar.gz
+          fail_on_unmatched_files: true
+          overwrite_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
