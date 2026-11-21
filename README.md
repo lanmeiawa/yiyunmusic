@@ -67,12 +67,22 @@
 
 ## 下载
 
-前往 [Releases](https://github.com/lanmeiawa/yiyunmusic/releases) 下载最新版（Windows 10 / 11 x64）：
+前往 [Releases](https://github.com/lanmeiawa/yiyunmusic/releases) 下载最新版。
+
+### Windows（10 / 11 x64）
 
 - **yiyunmusic-Setup-2.0.2.exe** —— 安装版（可自定义安装目录、自动创建快捷方式）
 - **yiyunmusic-portable-2.0.2.exe** —— 便携版，免安装，双击即用
 
 > 安装新版时会自动迁移旧版的登录态与个性化设置，无需重新扫码登录。
+
+### Linux（x64）
+
+前往 [Linux 版发布页](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.0.2-linux) 下载：
+
+- **yiyunmusic-2.0.2-x86_64.AppImage** —— Arch / 通用，`chmod +x` 后双击即可运行
+- **yiyunmusic-2.0.2-amd64.deb** —— Ubuntu / Debian，`sudo apt install ./yiyunmusic-2.0.2-amd64.deb`
+- **yiyunmusic-2.0.2-x64.tar.gz** —— 通用便携版，解压后运行 `./yiyunmusic`
 
 ## 使用方法
 
