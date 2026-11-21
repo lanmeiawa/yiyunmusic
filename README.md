@@ -1,4 +1,4 @@
-# 亦云音乐 · 网易云音乐第三方桌面客户端
+# yiyunmusic · 网易云音乐第三方桌面客户端
 
 一个以**动态歌词**为核心、支持**多套主题**的网易云音乐第三方桌面客户端。基于 Electron + React + NeteaseCloudMusicApi 构建。
 
@@ -6,10 +6,22 @@
 
 前往 [Releases](https://github.com/lanmeiawa/yiyunmusic/releases) 下载最新版：
 
-- **yiyunmusic-Setup-1.0.2.exe** — 安装版（可自定义安装目录、自动创建快捷方式）
-- **yiyunmusic-portable-1.0.2.exe** — 免安装，双击即用，可放 U 盘携带
+- **yiyunmusic-Setup-1.0.3.exe** — 安装版（可自定义安装目录、自动创建快捷方式）
+- **yiyunmusic-portable-1.0.3.exe** — 免安装，双击即用，可放 U 盘携带
 
-> Windows 10 / 11 x64。应用未做代码签名，首次运行若出现 SmartScreen 提示，选择「更多信息 → 仍要运行」即可。
+> Windows 10 / 11 x64。
+
+## 代码签名
+
+从 v1.0.3 起，安装包、便携版与主程序均使用自签名代码签名证书（`CN=yiyunmusic`）签名，签名字段可通过文件属性「数字签名」查看。
+
+自签名证书不在 Windows 默认信任列表中，首次运行仍可能出现「未知发布者」提示。如果希望消除该提示，可以：
+
+1. 下载 [yiyunmusic-selfsigned.cer](https://github.com/lanmeiawa/yiyunmusic/releases/latest/download/yiyunmusic-selfsigned.cer)
+2. 双击证书 → 安装证书 → 选择「本地计算机」→ 放入「受信任的根证书颁发机构」
+3. 重新运行安装包
+
+> 正式对外分发建议使用 CA 签发的 OV / EV 代码签名证书。项目已支持通过 `CSC_LINK` 与 `CSC_KEY_PASSWORD` 环境变量替换为正式证书，无需改代码。
 
 ## 功能
 
