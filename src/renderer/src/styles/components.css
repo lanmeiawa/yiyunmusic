@@ -275,6 +275,40 @@
 .login-features svg { color: var(--primary); }
 .login-foot { font-size: 10px; color: var(--text-3); line-height: 1.5; }
 
+/* ============ 首次启动免责声明 ============ */
+.disclaimer-overlay {
+  position: absolute; inset: 0; z-index: 110; background: rgba(30, 32, 52, 0.55);
+  backdrop-filter: blur(12px); display: grid; place-items: center; animation: fadein-overlay 0.3s;
+}
+.disclaimer-card {
+  width: 460px; max-width: 92vw; background: var(--bg); border-radius: 22px; box-shadow: var(--shadow-lg);
+  padding: 34px 36px 28px; text-align: left; animation: popin 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.disclaimer-head { text-align: center; margin-bottom: 24px; }
+.disclaimer-logo {
+  width: 52px; height: 52px; border-radius: 16px; margin: 0 auto 14px; color: #fff;
+  background: var(--primary-gradient); display: grid; place-items: center; box-shadow: var(--shadow-primary-lg);
+}
+.disclaimer-head h2 { font-size: 20px; font-weight: 750; }
+.disclaimer-body { display: flex; flex-direction: column; gap: 16px; margin-bottom: 26px; }
+.disclaimer-item { display: flex; gap: 12px; align-items: flex-start; }
+.disclaimer-num {
+  width: 24px; height: 24px; border-radius: 50%; background: var(--primary-tint); color: var(--primary);
+  font-weight: 700; font-size: 12px; display: grid; place-items: center; flex-shrink: 0; margin-top: 1px;
+}
+.disclaimer-item p { font-size: 13px; color: var(--text-2); line-height: 1.7; margin: 0; }
+.disclaimer-item strong { color: var(--text); }
+.disclaimer-foot { display: flex; gap: 10px; justify-content: flex-end; }
+.disclaimer-decline {
+  padding: 10px 18px; border-radius: 20px; font-size: 13px; font-weight: 600;
+  color: var(--text-3); background: var(--bg-body);
+}
+.disclaimer-decline:hover { color: var(--text); background: var(--hover); }
+.disclaimer-accept {
+  padding: 10px 24px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #fff;
+  background: var(--primary-gradient); box-shadow: var(--shadow-primary);
+}
+
 /* ============ Toast ============ */
 .toast {
   position: absolute; z-index: 200; top: 60px; left: 50%; transform: translateX(-50%);
@@ -705,6 +739,7 @@
 
 /* ============ 听书电台 ============ */
 .radio-header-actions { display: flex; gap: 10px; }
+.local-actions { display: flex; gap: 10px; flex-shrink: 0; }
 .radio-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; padding: 0 34px 20px; }
 .radio-view { position: relative; z-index: 2; height: 100%; overflow-y: auto; padding: 0 0 20px; }
 .radio-header { display: flex; align-items: center; justify-content: space-between; padding: 24px 34px 18px; }

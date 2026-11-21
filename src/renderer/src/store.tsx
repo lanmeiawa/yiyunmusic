@@ -10,6 +10,24 @@ function hashCode(s: string): number {
   for (let i = 0; i < s.length; i++) { h = (h << 5) - h + s.charCodeAt(i); h |= 0 }
   return h
 }
+
+/** 本地文件 → Track：文件名按「歌名 - 歌手」拆分 */
+function toLocalTrack(f: { path: string; name: string; size: number }) {
+  const m = f.name.split(/-|—/)
+  const title = (m[0] || f.name).trim()
+  const artist = (m[1] || '本地音乐').trim()
+  return {
+    id: Math.abs(hashCode(f.path)),
+    name: title,
+    artists: [{ id: 0, name: artist }],
+    album: { id: 0, name: '本地音乐', picUrl: '' },
+    duration: 0,
+    fee: 0,
+    mv: 0,
+    alias: [] as string[],
+    localPath: f.path
+  }
+}
 import type { CommentItem, RadioCategory, LyricSearchItem, DownloadDialog, QualityProbe, AccountItem } from './types'
 import { translate, type Locale } from './i18n'
 import { coverUrl } from './utils/cover'
@@ -32,6 +50,9 @@ interface AppContextValue {
   isLoggedIn: boolean
   authReady: boolean
   loginOpen: boolean
+  disclaimerOpen: boolean
+  acceptDisclaimer: () => void
+  declineDisclaimer: () => void
   openLogin: () => void
   setProfile: (p: Profile | null) => void
   logout: () => Promise<void>
@@ -127,6 +148,12 @@ interface AppContextValue {
   activeRadio: RadioInfo | null
   setActiveRadio: (r: RadioInfo | null) => void
 
+  // 本地音乐
+  localTracks: Track[]
+  localLoading: boolean
+  scanLocal: () => Promise<void>
+  openLocalFiles: () => Promise<void>
+
   // 历史播放
   historyTracks: Track[]
   loadHistory: () => Promise<void>
@@ -187,6 +214,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfileState] = useState<Profile | null>(null)
   const [authReady, setAuthReady] = useState(false)
   const [loginOpen, setLoginOpen] = useState(false)
+  const [disclaimerOpen, setDisclaimerOpen] = useState(false)
   const [playlists, setPlaylists] = useState<Playlist[]>([])
   const [currentPlaylistId, setCurrentPlaylistId] = useState<number | null>(null)
   const [tracks, setTracks] = useState<Track[]>([])
@@ -276,8 +304,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // 初始化：读取本地登录态
   useEffect(() => {
     ;(async () => {
+      let accepted = true
       try {
         const s = await window.eApi.store.get()
+        accepted = !!s.customization?.disclaimerAccepted
         if (s.profile && s.isLoggedIn) {
           // 校验登录态是否仍有效
           try {
@@ -318,7 +348,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         console.error(e)
       } finally {
         setAuthReady(true)
-        setLoginOpen(true)
+        // 首次启动：未确认免责声明时先弹声明，确认后再进入登录流程
+        if (accepted) setLoginOpen(true)
+        else setDisclaimerOpen(true)
       }
     })()
   }, [])
@@ -439,6 +471,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // 登录弹窗入口（多处引用，需在此定义，避免 TDZ）
   const openLogin = useCallback(() => setLoginOpen(true), [])
 
+  // 首次启动免责声明：同意后持久化并进入登录流程；不同意则退出应用
+  const acceptDisclaimer = useCallback(() => {
+    setDisclaimerOpen(false)
+    window.eApi.customSet({ disclaimerAccepted: true }).catch(() => {})
+    setLoginOpen(true)
+  }, [])
+
+  const declineDisclaimer = useCallback(() => {
+    window.eApi.win.quit()
+  }, [])
+
   // ===== 收藏与歌单管理 =====
   const [likedIds, setLikedIds] = useState<number[]>([])
   const likedSetRef = useRef<Set<number>>(new Set())
@@ -486,14 +529,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // 添加歌曲到指定歌单
   const addToPlaylist = useCallback(async (playlistId: number, track: Track) => {
     try {
-      const res = await window.eApi.call('playlist_tracks', { id: playlistId, tracks: String(track.id), op: 'add' })
+      const res = await window.eApi.call('playlist_tracks', { pid: playlistId, tracks: String(track.id), op: 'add' })
       if (res?.body?.code === 200 || res?.code === 200) {
         setMessage(`已把「${track.name}」添加到歌单`)
+      } else if (res?.body?.code === 502 || res?.code === 502) {
+        // 502 常见于「歌单内歌曲重复」
+        setMessage(`「${track.name}」已在该歌单中`)
       } else {
-        setMessage(res?.body?.message || res?.message || '添加失败（可能已在该歌单中）')
+        setMessage(res?.body?.message || res?.message || '添加失败')
       }
     } catch (e: any) {
-      setMessage(e?.body?.message || e?.message || '添加失败（可能已在该歌单中）')
+      setMessage(e?.body?.message || e?.message || '添加失败')
     }
   }, [setMessage])
 
@@ -678,19 +724,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setLocalLoading(true)
     try {
       const files: { path: string; name: string; size: number }[] = await window.eApi.localScan()
-      const list: Track[] = files.map((f) => {
-        // 文件名按 "歌名 - 歌手" 拆分
-        const m = f.name.split(/-|—/)
-        const title = (m[0] || f.name).trim()
-        const artist = (m[1] || '本地音乐').trim()
-        return {
-          id: Math.abs(hashCode(f.path)),
-          name: title,
-          artists: [{ id: 0, name: artist }],
-          album: { id: 0, name: '本地音乐', picUrl: '' },
-          duration: 0, fee: 0, mv: 0, alias: [], localPath: f.path
-        }
-      })
+      const list: Track[] = files.map(toLocalTrack)
       setLocalTracks(list)
       if (list.length) setMessage(`已扫描 ${list.length} 首本地音乐`)
       else setMessage('该目录下未找到音频文件')
@@ -938,12 +972,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           audio.src = 'file:///' + track.localPath.replace(/\\/g, '/')
         }
         syncAudioGraph(customizationRef.current)
+        // 自动识别同名封面与歌词文件
+        const meta = await window.eApi.localMeta(track.localPath).catch(() => null)
+        const patched = meta?.cover ? { ...track, album: { ...track.album, picUrl: meta.cover } } : track
         audio.play().catch(() => {})
-        setPlayer((p) => ({ ...p, current: track, isPlaying: autoPlay }))
+        setPlayer((p) => ({
+          ...p,
+          current: patched,
+          playlist: p.playlist.map((x) => (x.localPath === track.localPath ? patched : x)),
+          isPlaying: autoPlay
+        }))
         setCurrentQuality('本地')
         setCurrentQualityInfo(null)
         setSongUrlLoading(false)
-        loadLyricFor(track)
+        setLyricLines(meta?.lyric ? parseLyric(meta.lyric, '', '') : [])
         return
       }
       try {
@@ -1002,11 +1044,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         playlist: list && list.length ? list : p.playlist.length ? p.playlist : [track]
       }))
       setLyricLines([])
-      await loadLyric(track.id)
+      if (!track.localPath) await loadLyric(track.id)
       await resolveAndPlay(track, true)
     },
     [loadLyric, resolveAndPlay]
   )
+
+  const openLocalFiles = useCallback(async () => {
+    try {
+      const files: { path: string; name: string; size: number }[] = await window.eApi.localOpen()
+      if (!files?.length) return
+      const list = files.map(toLocalTrack)
+      setLocalTracks((prev) => {
+        const map = new Map(prev.map((t) => [String(t.localPath), t]))
+        for (const t of list) map.set(String(t.localPath), t)
+        return Array.from(map.values())
+      })
+      setView('local')
+      await playTrack(list[0], list)
+      setMessage(`正在播放本地文件：${list[0].name}`)
+    } catch (e: any) {
+      setMessage('打开本地文件失败：' + (e?.message || '未知错误'))
+    }
+  }, [playTrack, setMessage])
 
   const togglePlay = useCallback(() => {
     if (!audio) return
@@ -1370,7 +1430,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const batchAddToPlaylist = useCallback(async (playlistId: number, list: Track[]) => {
     if (!list.length) return
     try {
-      const res = await window.eApi.call('playlist_tracks', { id: playlistId, tracks: list.map((t) => t.id).join(','), op: 'add' })
+      const res = await window.eApi.call('playlist_tracks', { pid: playlistId, tracks: list.map((t) => t.id).join(','), op: 'add' })
       if (res?.body?.code === 200 || res?.code === 200) setMessage(`已添加 ${list.length} 首歌曲到歌单`)
       else setMessage(res?.body?.message || res?.message || '批量添加失败')
     } catch (e: any) {
@@ -1381,7 +1441,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const batchRemoveFromPlaylist = useCallback(async (playlistId: number, ids: number[]) => {
     if (!ids.length) return
     try {
-      const res = await window.eApi.call('playlist_tracks', { id: playlistId, tracks: ids.join(','), op: 'del' })
+      const res = await window.eApi.call('playlist_tracks', { pid: playlistId, tracks: ids.join(','), op: 'del' })
       if (res?.body?.code === 200 || res?.code === 200) {
         setMessage(`已从歌单移除 ${ids.length} 首歌曲`)
         if (currentPlaylistId === playlistId) await openPlaylist(playlistId)
@@ -1520,7 +1580,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const value: AppContextValue = {
     profile, isLoggedIn: !!profile, authReady,
-    loginOpen, openLogin,
+    loginOpen, openLogin, disclaimerOpen, acceptDisclaimer, declineDisclaimer,
     setProfile, logout,
     playlists, currentPlaylistId, loadPlaylists, openPlaylist, openArtist, openAlbum, tracks, playlistName, playlistLoading,
     player, playTrack, togglePlay, nextTrack, prevTrack, seek, setVolume, setPlayMode, playIndex,
@@ -1544,7 +1604,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     radios, radiosLoading, loadRadios, loadRadioPrograms, activeRadio, setActiveRadio,
     radioCats, activeCat, setActiveCat, loadRadioCats,
     aggCats,
-    localTracks, localLoading, scanLocal
+    localTracks, localLoading, scanLocal, openLocalFiles
   }
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

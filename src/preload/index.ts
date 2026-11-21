@@ -42,6 +42,8 @@ const api = {
 
   // 本地音乐扫描
   localScan: () => ipcRenderer.invoke('local:scan'),
+  localMeta: (filePath: string) => ipcRenderer.invoke('local:meta', filePath),
+  localOpen: () => ipcRenderer.invoke('local:open'),
   onDjProgress: (cb: (p: { msg: string; n: number }) => void) => {
     const handler = (_e: any, p: { msg: string; n: number }) => cb(p)
     ipcRenderer.on('dj:progress', handler)
@@ -124,6 +126,7 @@ const api = {
     minimize: () => ipcRenderer.send('win:minimize'),
     maximize: () => ipcRenderer.send('win:maximize'),
     close: () => ipcRenderer.send('win:close'),
+    quit: () => ipcRenderer.send('app:quit'),
     setFullScreen: (on: boolean) => ipcRenderer.send('win:set-fullscreen', on),
     // 系统级退出全屏（如 Esc）时由主进程通知，渲染层同步移除沉浸布局
     onFullscreenLeft: (cb: () => void) => {

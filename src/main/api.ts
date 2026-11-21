@@ -17,10 +17,6 @@ import {
   user_level,
   vip_info,
   user_account,
-  user_record,
-  user_level,
-  vip_info,
-  user_account,
   recommend_songs,
   personalized_newsong,
   personalized,
@@ -34,6 +30,7 @@ import {
   dj_program,
   dj_program_toplist,
   dj_category_recommend,
+  dj_recommend,
   comment,
   toplist,
   album,
@@ -63,6 +60,10 @@ const apiMap: Record<string, ApiFn> = {
   check_music,
   search,
   user_detail,
+  user_record,
+  user_level,
+  vip_info,
+  user_account,
   recommend_songs,
   personalized_newsong,
   personalized,
@@ -78,6 +79,7 @@ const apiMap: Record<string, ApiFn> = {
   dj_program,
   dj_program_toplist,
   dj_category_recommend,
+  dj_recommend,
   comment,
   toplist,
   search_hot_detail,
@@ -88,30 +90,78 @@ const apiMap: Record<string, ApiFn> = {
 }
 
 /**
- * 统一调用网易云接口：
+ * 参数规范化：修正已知的接口参数名/类型陷阱，让调用方无论传参习惯如何都能命中正确接口。
+ */
+function normalizeParams(name: string, params: Record<string, any>): Record<string, any> {
+  const p: Record<string, any> = { ...params }
+  switch (name) {
+    case 'playlist_tracks':
+      // 接口实际用 pid（歌单 id），前端历史遗留用了 id，这里兜底纠正
+      if (p.pid === undefined && p.id !== undefined) { p.pid = p.id; delete p.id }
+      // tracks 需要是逗号分隔字符串
+      if (Array.isArray(p.tracks)) p.tracks = p.tracks.join(',')
+      else if (p.tracks !== undefined) p.tracks = String(p.tracks)
+      break
+    case 'like':
+      // like.js 只识别字符串 'false'，boolean false 会被误判成 true，这里转成字符串
+      if (p.like === true) p.like = 'true'
+      else if (p.like === false) p.like = 'false'
+      break
+  }
+  return p
+}
+
+/** 是否可安全重试：仅对网络/超时类错误重试；业务错误（参数错、未登录、不存在等）不重试 */
+function isRetryable(e: any): boolean {
+  const msg = String(e?.body?.msg || e?.body?.message || e?.message || e?.code || '')
+  return /timeout|timed out|network error|econnreset|econnrefused|enotfound|eai_again|socket hang up|aborted|exceeded|connect/i.test(msg)
+}
+
+const DEFAULT_TIMEOUT = 15000
+const RETRY_LIMIT = 2
+
+/**
+ * 统一调用网易云接口（带兜底）：
+ * - 参数规范化（修正 pid / like 等已知陷阱）
  * - 自动注入当前 cookie（登录态）
  * - 自动把接口返回的 Set-Cookie 合并进本地 cookie
+ * - 默认 15s 超时；网络层错误自动重试（指数退避，最多 2 次）
+ * - 统一返回 body（含 code），失败时抛出带 code/message 的结构化错误
  */
 export async function callApi(name: string, params: Record<string, any> = {}): Promise<any> {
   const fn = apiMap[name]
   if (!fn) throw new Error(`未知接口: ${name}`)
 
+  const merged = normalizeParams(name, params)
   const cookie = getCookie()
-  const merged: Record<string, any> = { ...params }
-  if (cookie) merged.cookie = cookie
+  if (cookie && merged.cookie === undefined) merged.cookie = cookie
+  if (merged.timeout === undefined) merged.timeout = DEFAULT_TIMEOUT
 
-  try {
-    const res: any = await fn(merged)
-    // 合并 cookie（登录相关接口会返回新 cookie）
-    if (res?.cookie) {
-      const next = mergeCookie(getCookie(), res.cookie)
-      if (next && next !== getCookie()) setCookie(next)
+  let lastErr: any
+  for (let attempt = 0; attempt <= RETRY_LIMIT; attempt++) {
+    try {
+      const res: any = await fn(merged)
+      // 合并 cookie（登录相关接口会返回新 cookie）
+      if (res?.cookie) {
+        const next = mergeCookie(getCookie(), res.cookie)
+        if (next && next !== getCookie()) setCookie(next)
+      }
+      return res?.body ?? res
+    } catch (e: any) {
+      lastErr = e
+      if (attempt >= RETRY_LIMIT || !isRetryable(e)) break
+      console.warn(`[api] ${name} 调用失败，第 ${attempt + 1} 次重试:`, e?.body?.message || e?.body?.msg || e?.message || e)
+      await sleep(400 * (attempt + 1))
     }
-    return res?.body ?? res
-  } catch (e: any) {
-    console.error(`[api] ${name} 调用失败:`, e?.message || e)
-    throw e
   }
+
+  const msg = lastErr?.body?.message || lastErr?.body?.msg || lastErr?.message || String(lastErr)
+  console.error(`[api] ${name} 调用失败:`, msg)
+  // 统一抛出结构化错误，前端可读取 code / message / body
+  const err: any = new Error(msg)
+  err.code = lastErr?.body?.code ?? lastErr?.status ?? lastErr?.code
+  err.body = lastErr?.body ?? { code: err.code, message: msg }
+  throw err
 }
 
 /** 扫码登录：第一步，获取 unikey */

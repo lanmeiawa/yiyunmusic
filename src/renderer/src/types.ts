@@ -66,6 +66,8 @@ export interface Customization {
   searchHistory: string[]
   /** 界面语言 zh / en */
   language: 'zh' | 'en'
+  /** 首次启动免责声明已确认 */
+  disclaimerAccepted: boolean
 }
 
 export const DEFAULT_CUSTOMIZATION: Customization = {
@@ -92,7 +94,8 @@ export const DEFAULT_CUSTOMIZATION: Customization = {
   gpuAcceleration: true,
   shortcuts: { ...DEFAULT_SHORTCUTS },
   searchHistory: [],
-  language: 'zh'
+  language: 'zh',
+  disclaimerAccepted: false
 }
 
 export interface DesktopLyricsSettings {

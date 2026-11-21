@@ -740,6 +740,63 @@ function setupIpc() {
     return out.slice(0, 2000)
   })
 
+  // 本地音频伴随文件：同名 .lrc 歌词 + 同名/常见封面图
+  ipcMain.handle('local:meta', async (_e, filePath: string) => {
+    try {
+      if (!filePath || !fs.existsSync(filePath)) return { lyric: '', cover: '' }
+      const dir = path.dirname(filePath)
+      const base = path.basename(filePath, path.extname(filePath))
+
+      let lyric = ''
+      for (const name of [`${base}.lrc`, `${base}.LRC`, `${base}.Lrc`]) {
+        const p = path.join(dir, name)
+        if (!fs.existsSync(p)) continue
+        const buf = fs.readFileSync(p)
+        const utf8 = buf.toString('utf8')
+        // 中文歌词常见 GBK 编码：出现替换字符时尝试 GBK 解码
+        if (utf8.includes('\uFFFD')) {
+          try { lyric = new TextDecoder('gbk').decode(buf) } catch { lyric = utf8 }
+        } else {
+          lyric = utf8
+        }
+        break
+      }
+
+      let cover = ''
+      const imgs = [
+        `${base}.jpg`, `${base}.jpeg`, `${base}.png`, `${base}.webp`,
+        'cover.jpg', 'cover.jpeg', 'cover.png', 'folder.jpg', 'folder.png',
+        'front.jpg', 'album.jpg'
+      ]
+      for (const name of imgs) {
+        const p = path.join(dir, name)
+        if (!fs.existsSync(p)) continue
+        const st = fs.statSync(p)
+        if (st.size > 3 * 1024 * 1024) break
+        const ext = path.extname(p).slice(1).toLowerCase()
+        const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg'
+        cover = `data:${mime};base64,${fs.readFileSync(p).toString('base64')}`
+        break
+      }
+      return { lyric, cover }
+    } catch (e: any) {
+      console.warn('[local:meta] 读取伴随文件失败:', e?.message || e)
+      return { lyric: '', cover: '' }
+    }
+  })
+
+  // 直接打开本地音频文件（支持多选）
+  ipcMain.handle('local:open', async () => {
+    const win = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined
+    const res = await dialog.showOpenDialog(win as BrowserWindow, {
+      title: '选择本地音频文件',
+      properties: ['openFile', 'multiSelections'],
+      filters: [{ name: '音频', extensions: ['mp3', 'flac', 'wav', 'm4a', 'ape', 'ogg', 'aac', 'opus'] }]
+    })
+    if (res.canceled) return []
+    return res.filePaths.map((p) => ({ path: p, name: path.basename(p, path.extname(p)), size: 0 }))
+  })
+
   // 有声书全量聚合（分页遍历 + 限频保护 + 聚合分类 + 磁盘缓存）
   ipcMain.handle('dj:fetch-all', async (_e) => {
     try {
@@ -896,6 +953,8 @@ function setupIpc() {
     else mainWindow.maximize()
   })
   ipcMain.on('win:close', () => mainWindow?.close())
+  // 免责声明「不同意」时真正退出（跳过隐藏到托盘的逻辑）
+  ipcMain.on('app:quit', () => { quitting = true; app.quit() })
   ipcMain.on('win:set-fullscreen', (_e, on: boolean) => {
     if (!mainWindow || mainWindow.isDestroyed()) return
     mainWindow.setFullScreen(!!on)

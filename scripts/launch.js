@@ -20,9 +20,10 @@ function run() {
     })
     child.on('exit', (code) => process.exit(code ?? 0))
   } else {
-    // 生产模式：直接以打包产物启动
-    const entry = path.join(__dirname, '..', 'out', 'main', 'index.js')
-    const child = spawn(electronBin, [entry], {
+    // 生产模式：以打包产物启动
+    // 注意：必须用 `electron .`（读根 package.json 的 main 字段）而非 `electron out/main/index.js`，
+    // 否则 app.name 会回退为 "Electron"，导致 userData 目录指向 %APPDATA%\Electron，登录态读取失败。
+    const child = spawn(electronBin, ['.'], {
       cwd: path.join(__dirname, '..'),
       env,
       stdio: 'inherit'

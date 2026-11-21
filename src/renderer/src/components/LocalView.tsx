@@ -5,7 +5,7 @@ import { IconPlay, IconMusic } from './Icons'
 
 /** 本地音乐：扫描目录后播放本地音频文件 */
 export default function LocalView() {
-  const { localTracks, localLoading, scanLocal, player, playTrack } = useApp()
+  const { localTracks, localLoading, scanLocal, openLocalFiles, player, playTrack } = useApp()
 
   return (
     <div className="radio-view local-view">
@@ -17,7 +17,10 @@ export default function LocalView() {
             <p>{localTracks.length ? `已扫描 ${localTracks.length} 首本地歌曲` : '扫描本机目录，直接播放本地音频文件'}</p>
           </div>
         </div>
-        <button className="pl-refresh" onClick={scanLocal}>{localLoading ? '扫描中…' : '扫描目录'}</button>
+        <div className="local-actions">
+          <button className="pl-refresh" onClick={scanLocal}>{localLoading ? '扫描中…' : '扫描目录'}</button>
+          <button className="pl-refresh" onClick={openLocalFiles}>打开文件</button>
+        </div>
       </div>
 
       <div className="pl-table-head">
@@ -32,7 +35,7 @@ export default function LocalView() {
         {!localLoading && localTracks.length === 0 && (
           <div className="radio-empty">
             <IconMusic size={30} />
-            <p>点击右上角「扫描目录」选择你的音乐文件夹，支持 mp3 / flac / wav / m4a / ape / ogg</p>
+            <p>点击「扫描目录」选择音乐文件夹，或「打开文件」直接播放单个音频；支持 mp3 / flac / wav / m4a / ape / ogg，并自动识别同目录下的 .lrc 歌词与封面图</p>
           </div>
         )}
         {!localLoading && localTracks.map((t, i) => {

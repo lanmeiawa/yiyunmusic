@@ -675,3 +675,33 @@ input, button, .album-card, .pl-row, .quality-option, .theme-option,
 }
 :root.sidebar-collapsed .side-footer { align-items: center; }
 :root.sidebar-collapsed .side-group .side-section-title { display: none; }
+
+/* ============ 低分辨率侧边栏防压缩 ============ */
+.sidebar { overflow: hidden; }
+.side-group, .side-footer, .side-user { flex-shrink: 0; }
+.playlist-scroll { flex: 1 1 auto; min-height: 90px; }
+.user-avatar { flex-shrink: 0; }
+.user-nickname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.logout-btn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+@media (max-height: 780px) {
+  .sidebar { padding: 10px 10px 8px; }
+  .nav-item { height: 36px; font-size: 13px; gap: 10px; }
+  .side-section-title { margin: 10px 8px 6px; font-size: 11px; }
+  .playlist-item { height: 32px; font-size: 12.5px; }
+  .playlist-item-icon { width: 22px; height: 22px; }
+  .side-footer { padding-top: 8px; gap: 6px; }
+  .side-user { padding: 8px 8px 2px; gap: 8px; }
+  .user-avatar { width: 30px; height: 30px; }
+  .user-name { font-size: 12px; }
+  .logout-btn { font-size: 10px; }
+  .side-login { height: 34px; font-size: 12.5px; }
+}
+
+@media (max-height: 640px) {
+  .side-section-title { margin: 6px 8px 4px; }
+  .nav-item { height: 32px; font-size: 12.5px; }
+  .playlist-item { height: 28px; font-size: 12px; }
+  .playlist-scroll { min-height: 60px; }
+  .user-avatar { width: 26px; height: 26px; }
+}

@@ -13,6 +13,7 @@ import ProfileView from './components/ProfileView'
 import LocalView from './components/LocalView'
 import PlayerBar from './components/PlayerBar'
 import LoginModal from './components/LoginModal'
+import DisclaimerModal from './components/DisclaimerModal'
 import DownloadModal from './components/DownloadModal'
 import mitiaImg from './assets/mitia.png'
 // 米提亚主题定制素材（经 Vite 处理为 URL，注入 CSS 变量供各控件统一引用）
@@ -78,6 +79,7 @@ function Main() {
       </div>
       <PlayerBar />
 
+      {authReady && <DisclaimerModal />}
       {authReady && loginOpen && <LoginModal />}
       <DownloadModal />
       {message && <div className="toast">{message}</div>}
