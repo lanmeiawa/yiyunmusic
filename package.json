@@ -1,0 +1,87 @@
+{
+  "name": "yiyun-music",
+  "version": "1.0.0",
+  "private": true,
+  "description": "亦云音乐 - 简洁明亮的网易云音乐第三方桌面客户端，主打动态歌词",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "node scripts/launch.js --dev",
+    "start": "node scripts/launch.js",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "dist": "electron-vite build && electron-builder --win --x64",
+    "dist:portable": "electron-vite build && electron-builder --win --x64 --dir"
+  },
+  "dependencies": {
+    "NeteaseCloudMusicApi": "^4.34.1",
+    "electron-store": "^8.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "ffmpeg-static": "5.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^2.3.0",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11"
+  },
+  "build": {
+    "appId": "com.yiyun.music",
+    "productName": "亦云音乐",
+    "copyright": "Copyright © 2026 亦云音乐",
+    "directories": {
+      "output": "dist-release",
+      "buildResources": "build"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "build/icon.png",
+        "to": "icon.png"
+      }
+    ],
+    "asarUnpack": [
+      "**/node_modules/ffmpeg-static/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "亦云音乐",
+      "installerLanguages": [
+        "zh_CN",
+        "en_US"
+      ],
+      "language": "2052"
+    },
+    "portable": {
+      "artifactName": "亦云音乐-便携版.exe"
+    }
+  }
+}
