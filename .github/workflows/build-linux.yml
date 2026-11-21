@@ -75,19 +75,11 @@ jobs:
       - name: List release files
         run: find artifacts -maxdepth 2 -type f -printf '%p %s bytes\n'
 
-      - name: Resolve release notes
-        id: notes
-        run: |
-          TAG="${{ inputs.tag_name || github.ref_name }}"
-          if [ -f "docs/RELEASE-$TAG.md" ]; then
-            echo "path=docs/RELEASE-$TAG.md" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Release
         uses: softprops/action-gh-release@v3.0.4
         with:
           tag_name: ${{ inputs.tag_name || github.ref_name }}
-          body_path: ${{ steps.notes.outputs.path }}
+          body_path: docs/RELEASE-${{ inputs.tag_name || github.ref_name }}.md
           files: |
             artifacts/*.exe
             artifacts/*.AppImage
