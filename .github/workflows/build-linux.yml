@@ -34,7 +34,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          rm -f package-lock.json
+          node -e "try{require('fs').unlinkSync('package-lock.json')}catch(e){}"
           npm install
 
       - name: Build app
