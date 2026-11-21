@@ -6,12 +6,16 @@ A third-party NetEase Cloud Music desktop client built with **Electron + React +
 
 ## Download
 
-Get the latest build from [Releases](https://github.com/lanmeiawa/yiyunmusic/releases):
+Windows and Linux builds are published in the **same release page** — pick the one for your system: [v2.0.3 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.0.3).
 
-- **yiyunmusic-Setup-2.0.0.exe** — installer (custom directory, desktop shortcut)
-- **yiyunmusic-portable-2.0.0.exe** — portable, no installation required
+**Windows 10 / 11 x64**
+- **yiyunmusic-Setup-2.0.3.exe** — installer (custom directory, desktop shortcut)
+- **yiyunmusic-portable-2.0.3.exe** — portable, no installation required
 
-> Windows 10 / 11 x64.
+**Linux x64**
+- **yiyunmusic-2.0.3-x86_64.AppImage** — universal (Arch / Ubuntu), `chmod +x` then run
+- **yiyunmusic-2.0.3-amd64.deb** — Ubuntu / Debian, `sudo apt install ./yiyunmusic-2.0.3-amd64.deb`
+- **yiyunmusic-2.0.3-x64.tar.gz** — portable tarball, extract and run `./yiyunmusic`
 
 ## Code signing
 
@@ -19,7 +23,7 @@ Since v1.0.3 the installer, portable build and main executable are signed with a
 
 To remove it:
 
-1. Download [yiyunmusic-selfsigned.cer](https://github.com/lanmeiawa/yiyunmusic/releases/latest/download/yiyunmusic-selfsigned.cer)
+1. Download [yiyunmusic-selfsigned.cer](https://github.com/lanmeiawa/yiyunmusic/releases/download/v2.0.0/yiyunmusic-selfsigned.cer)
 2. Double-click → Install Certificate → Local Machine → place it in **Trusted Root Certification Authorities**
 3. Run the installer again
 
