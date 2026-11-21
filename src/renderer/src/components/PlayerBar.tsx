@@ -79,7 +79,7 @@ export default function PlayerBar() {
             <span className="pb-song-title" title={current?.name || ''}>{current?.name || '尚未播放'}</span>
             {current?.fee === 1 && <span className="pb-vip"><IconVip size={10} /> VIP</span>}
           </div>
-          <div className="pb-song-artist">{current?.artists?.map((a) => a.name).join(' / ') || '亦云音乐'}</div>
+          <div className="pb-song-artist">{current?.artists?.map((a) => a.name).join(' / ') || 'yiyunmusic'}</div>
         </div>
         <button
           className={`pb-lyric-btn ${view === 'lyrics' ? 'active' : ''}`}

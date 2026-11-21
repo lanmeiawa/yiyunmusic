@@ -1,6 +1,6 @@
 @import './components.css';
 
-/* ============ 亦云音乐 · 全局样式（多主题） ============ */
+/* ============ yiyunmusic · 全局样式（多主题） ============ */
 :root,
 :root[data-theme="light"] {
   --primary: #ff5a7a;

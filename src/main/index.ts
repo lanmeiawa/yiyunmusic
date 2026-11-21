@@ -28,6 +28,27 @@ let lastLyricsPayload: any = null
 let quitting = false
 
 /**
+ * 应用更名为 yiyunmusic 后，userData 目录随之变化；
+ * 首次启动时把旧的「yiyunmusic」数据（登录态 / 设置 / 缓存）迁移过来。
+ */
+function migrateUserData() {
+  if (process.platform !== 'win32') return
+  try {
+    const appData = app.getPath('appData')
+    const oldDir = path.join(appData, 'yiyunmusic')
+    const newDir = path.join(appData, 'yiyunmusic')
+    if (!fs.existsSync(oldDir)) return
+    if (fs.existsSync(path.join(newDir, 'yiyun-store.json'))) return
+    fs.mkdirSync(newDir, { recursive: true })
+    fs.cpSync(oldDir, newDir, { recursive: true, force: false, errorOnExist: false })
+    console.log('[migrate] 已迁移旧版用户数据到 yiyunmusic')
+  } catch (e: any) {
+    console.warn('[migrate] 用户数据迁移失败:', e?.message || e)
+  }
+}
+migrateUserData()
+
+/**
  * GPU 硬件加速：Chromium 要求这些开关在 app ready 之前注入。
  * 此时 store 模块尚未初始化，因此直接读磁盘配置；缺省或读取失败时按开启处理。
  */
@@ -367,7 +388,78 @@ function appIconPath(): string {
     : path.join(__dirname, '../../build/icon.png')
 }
 
-/** 图标更换后即时同步托盘与主窗口（Windows 任务栏部分版本需重启应用） */
+const SHORTCUT_NAMES = ['yiyunmusic', '亦云音乐']
+
+/** 生成 PNG 内嵌型 ICO（Windows Vista+ 支持），快捷方式图标必须是 ico/exe/dll */
+function buildIcoFromPng(pngPath: string): string {
+  try {
+    const img = nativeImage.createFromPath(pngPath)
+    if (img.isEmpty()) return ''
+    const png = img.resize({ width: 256, height: 256, quality: 'best' }).toPNG()
+    if (!png.length) return ''
+    const header = Buffer.alloc(22)
+    header.writeUInt16LE(0, 0) // reserved
+    header.writeUInt16LE(1, 2) // type: icon
+    header.writeUInt16LE(1, 4) // count
+    header.writeUInt8(0, 6) // width 0 = 256
+    header.writeUInt8(0, 7) // height 0 = 256
+    header.writeUInt8(0, 8) // color count
+    header.writeUInt8(0, 9) // reserved
+    header.writeUInt16LE(1, 10) // planes
+    header.writeUInt16LE(32, 12) // bit count
+    header.writeUInt32LE(png.length, 14)
+    header.writeUInt32LE(22, 18)
+    const icoPath = path.join(app.getPath('userData'), 'app-icon.ico')
+    fs.writeFileSync(icoPath, Buffer.concat([header, png]))
+    return icoPath
+  } catch (e: any) {
+    console.warn('[icon] ICO 生成失败:', e?.message || e)
+    return ''
+  }
+}
+
+/** 同步桌面与开始菜单快捷方式图标，并刷新资源管理器图标缓存 */
+function updateShortcutIcons(customPath?: string) {
+  if (process.platform !== 'win32') return
+  let iconFile = process.execPath
+  let iconIndex = 0
+  if (customPath && fs.existsSync(customPath)) {
+    const ico = buildIcoFromPng(customPath)
+    if (ico) { iconFile = ico; iconIndex = 0 }
+  }
+  const dirs = [
+    app.getPath('desktop'),
+    path.join(app.getPath('appData'), 'Microsoft', 'Windows', 'Start Menu', 'Programs')
+  ]
+  for (const dir of dirs) {
+    for (const name of SHORTCUT_NAMES) {
+      const lnk = path.join(dir, `${name}.lnk`)
+      try {
+        if (!fs.existsSync(lnk)) continue
+        const old = shell.readShortcutLink(lnk)
+        shell.writeShortcutLink(lnk, 'update', {
+          target: old.target,
+          args: old.args,
+          cwd: old.cwd || path.dirname(old.target),
+          icon: iconFile,
+          iconIndex,
+          description: old.description || name,
+          appUserModelId: old.appUserModelId
+        })
+        console.log('[icon] 快捷方式图标已更新:', lnk)
+      } catch (e: any) {
+        console.warn('[icon] 快捷方式更新失败:', lnk, e?.message || e)
+      }
+    }
+  }
+  // 让资源管理器立即刷新图标缓存（失败忽略）
+  try {
+    const { execFile } = require('node:child_process')
+    execFile('ie4uinit.exe', ['-show'], () => {})
+  } catch { /* ignore */ }
+}
+
+/** 图标更换后即时同步主窗口、托盘与桌面快捷方式 */
 function applyAppIcon(iconPath?: string) {
   const target = iconPath && fs.existsSync(iconPath) ? iconPath : appIconPath()
   try {
@@ -381,6 +473,7 @@ function applyAppIcon(iconPath?: string) {
   } catch (e: any) {
     console.error('[icon] 应用图标失败:', e?.message || e)
   }
+  updateShortcutIcons(iconPath && fs.existsSync(iconPath) ? iconPath : undefined)
 }
 
 /** 系统托盘 */
@@ -393,7 +486,7 @@ function createTray() {
     }
     tray = new Tray(icon)
     updateTrayMenu()
-    tray.setToolTip(getStore().customization.appName || '亦云音乐')
+    tray.setToolTip(getStore().customization.appName || 'yiyunmusic')
     tray.on('click', () => {
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.show()
@@ -656,7 +749,7 @@ function setupIpc() {
     if (!url || !/^https?:\/\//i.test(url)) return { file: '', error: '无效音源' }
     try {
       const cust = getStore().customization
-      const dir = cust.downloadDir || path.join(app.getPath('downloads'), '亦云音乐')
+      const dir = cust.downloadDir || path.join(app.getPath('downloads'), 'yiyunmusic')
       fs.mkdirSync(dir, { recursive: true })
       const safe = `${name || 'song'} - ${artist || 'unknown'}`.replace(/[\\/:*?"<>|]/g, '_').slice(0, 120)
       const ext = type === 'flac' ? '.flac' : type === 'm4a' ? '.m4a' : '.mp3'

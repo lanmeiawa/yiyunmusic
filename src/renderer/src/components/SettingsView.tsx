@@ -223,7 +223,7 @@ export default function SettingsView() {
             style={{ width: 220 }}
             value={appNameDraft}
             maxLength={12}
-            placeholder="默认：亦云音乐"
+            placeholder="默认：yiyunmusic"
             onChange={(e) => setAppNameDraft(e.target.value)}
           />
           <button className="settings-btn primary" onClick={() => {
@@ -312,7 +312,7 @@ export default function SettingsView() {
             if (d) setMessage('下载目录已设置：' + d)
           }}>选择下载目录</button>
           <span className="settings-dir-label" title={customization.downloadDir || ''}>
-            当前：{customization.downloadDir ? baseName(customization.downloadDir) + '（' + customization.downloadDir + '）' : '默认（下载/亦云音乐）'}
+            当前：{customization.downloadDir ? baseName(customization.downloadDir) + '（' + customization.downloadDir + '）' : '默认（下载/yiyunmusic）'}
           </span>
         </div>
         <div className="settings-row wrap">

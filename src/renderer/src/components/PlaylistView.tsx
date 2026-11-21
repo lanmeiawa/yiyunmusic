@@ -51,7 +51,7 @@ export default function PlaylistView() {
         <div className="pl-info">
           <div className="pl-label">歌单</div>
           <h1>{playlistName}</h1>
-          <div className="pl-meta">共 {tracks.length} 首歌曲 · 亦云音乐</div>
+          <div className="pl-meta">共 {tracks.length} 首歌曲 · yiyunmusic</div>
         </div>
       </div>
 
