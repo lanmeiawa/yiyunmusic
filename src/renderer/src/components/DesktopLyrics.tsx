@@ -187,7 +187,7 @@ export default function DesktopLyrics() {
       >
         <div className="dl-title">
           <span className={`dl-eq ${data.isPlaying ? 'playing' : ''}`}><i /><i /><i /></span>
-          <span className="dl-song">{data.title || '亦云音乐 · 桌面歌词'}</span>
+          <span className="dl-song">{data.title || 'yiyunmusic · 桌面歌词'}</span>
           {data.artist && <span className="dl-artist">— {data.artist}</span>}
         </div>
         <div className="dl-actions">

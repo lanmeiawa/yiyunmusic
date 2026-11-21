@@ -1,6 +1,6 @@
 {
   "name": "yiyunmusic",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "亦云音乐 - 简洁明亮的网易云音乐第三方桌面客户端，主打动态歌词",
   "main": "./out/main/index.js",
@@ -32,8 +32,8 @@
   },
   "build": {
     "appId": "com.yiyun.music",
-    "productName": "亦云音乐",
-    "copyright": "Copyright © 2026 亦云音乐",
+    "productName": "yiyunmusic",
+    "copyright": "Copyright © 2026 yiyunmusic",
     "directories": {
       "output": "dist-release",
       "buildResources": "build"
@@ -74,7 +74,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "亦云音乐",
+      "shortcutName": "yiyunmusic",
       "installerLanguages": [
         "zh_CN",
         "en_US"

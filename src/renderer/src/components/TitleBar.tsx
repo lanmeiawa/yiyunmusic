@@ -78,7 +78,7 @@ export default function TitleBar() {
               ? <img src={`file:///${customization.iconPath.replace(/\\/g, '/')}`} alt="" />
               : <IconMusic size={18} />}
           </span>
-          <span className="brand-name">{customization.appName || '亦云音乐'}</span>
+          <span className="brand-name">{customization.appName || 'yiyunmusic'}</span>
         </div>
         {(view === 'playlist' || view === 'lyrics' || view === 'search' || view === 'history') && (
           <button className="titlebar-back" onClick={goBack} title="返回">

@@ -76,7 +76,7 @@ export default function DownloadModal() {
         </p>
 
         <div className="dl-modal-foot">
-          <span>保存到：{customization.downloadDir || '下载 / 亦云音乐'}</span>
+          <span>保存到：{customization.downloadDir || '下载 / yiyunmusic'}</span>
           <div>
             <button className="settings-btn" onClick={closeDownload}>取消</button>
             <button

@@ -51,13 +51,13 @@ export interface Customization {
   showTranslation: boolean
   /** 睡眠定时（分钟，0=关闭） */
   sleepTimerMin: number
-  /** 下载目录（空=默认 下载/亦云音乐） */
+  /** 下载目录（空=默认 下载/yiyunmusic） */
   downloadDir?: string
   /** 下载无损(FLAC)自动转 MP3 */
   flacToMp3: boolean
   /** 下载音质：standard/exhigh/lossless */
   downloadQuality: string
-  /** 自定义应用名（空=亦云音乐） */
+  /** 自定义应用名（空=yiyunmusic） */
   appName: string
   /** 主页欢迎语颜色（hex，空=跟随主题） */
   welcomeColor: string
