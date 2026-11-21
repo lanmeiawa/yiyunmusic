@@ -37,13 +37,24 @@ function migrateUserData() {
   if (process.platform !== 'win32') return
   try {
     const appData = app.getPath('appData')
-    const oldDir = path.join(appData, 'yiyunmusic')
     const newDir = path.join(appData, 'yiyunmusic')
-    if (!fs.existsSync(oldDir)) return
+    // 新版已有配置则不再迁移，避免覆盖用户当前设置
     if (fs.existsSync(path.join(newDir, 'yiyun-store.json'))) return
+
+    // 依次兼容：旧中文产品名 / 旧英文包名 / 手动备份目录
+    const oldDir = ['亦云音乐', 'yiyun-music', 'yiyunmusic-old']
+      .map((name) => path.join(appData, name))
+      .find((dir) => fs.existsSync(path.join(dir, 'yiyun-store.json')))
+    if (!oldDir) return
+
     fs.mkdirSync(newDir, { recursive: true })
-    fs.cpSync(oldDir, newDir, { recursive: true, force: false, errorOnExist: false })
-    console.log('[migrate] 已迁移旧版用户数据到 yiyunmusic')
+    // 只迁移有意义的数据，跳过 Cache/GPUCache 等临时目录
+    for (const item of ['yiyun-store.json', 'app-icon.png', 'app-icon.ico', 'dj-cache.json', 'backgrounds']) {
+      const src = path.join(oldDir, item)
+      if (!fs.existsSync(src)) continue
+      fs.cpSync(src, path.join(newDir, item), { recursive: true, force: false })
+    }
+    console.log('[migrate] 已从旧版目录迁移登录态与个性化设置:', oldDir)
   } catch (e: any) {
     console.warn('[migrate] 用户数据迁移失败:', e?.message || e)
   }
