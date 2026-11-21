@@ -6,8 +6,8 @@
 
 前往 [Releases](https://github.com/lanmeiawa/yiyun-music/releases) 下载最新版：
 
-- **亦云音乐 Setup 1.0.0.exe** — 安装版（可自定义安装目录、自动创建快捷方式）
-- **亦云音乐-便携版.exe** — 免安装，双击即用，可放 U 盘携带
+- **yiyun-music-Setup-1.0.0.exe** — 安装版（可自定义安装目录、自动创建快捷方式）
+- **yiyun-music-portable-1.0.0.exe** — 免安装，双击即用，可放 U 盘携带
 
 > Windows 10 / 11 x64。应用未做代码签名，首次运行若出现 SmartScreen 提示，选择「更多信息 → 仍要运行」即可。
 
