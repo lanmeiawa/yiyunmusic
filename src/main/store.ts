@@ -1,6 +1,7 @@
 import { app } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
+import { isSealed, seal, unseal } from './secure'
 
 export interface Profile {
   userId: number
@@ -171,20 +172,38 @@ const DEFAULT: StoreShape = {
 }
 
 let cache: StoreShape = { ...DEFAULT }
+/** 读到旧版明文 cookie 时置位，initStore 末尾回写一次，完成「明文 -> 密文」迁移 */
+let needReseal = false
 
 function file(): string {
   return path.join(app.getPath('userData'), 'yiyun-store.json')
 }
 
+/**
+ * 把磁盘里的 Cookie 解成内存明文；遇到旧明文保持原样并打迁移标记。
+ * 只处理当前 cookie 与多账号列表，其它字段不受影响。
+ */
+function unlockCookie(value: unknown): string {
+  if (typeof value !== 'string' || !value) return ''
+  if (!isSealed(value)) needReseal = true
+  return unseal(value)
+}
+
 export function initStore(): void {
+  needReseal = false
   try {
     const p = file()
     if (fs.existsSync(p)) {
       const raw = fs.readFileSync(p, 'utf-8')
       const parsed = JSON.parse(raw)
+      const accounts: StoredAccount[] = Array.isArray(parsed.accounts)
+        ? parsed.accounts.map((a: StoredAccount) => ({ ...a, cookie: unlockCookie(a.cookie) }))
+        : []
       cache = {
         ...DEFAULT,
         ...parsed,
+        cookie: unlockCookie(parsed.cookie),
+        accounts,
         desktopLyrics: { ...DEFAULT.desktopLyrics, ...(parsed.desktopLyrics || {}) },
         customization: { ...DEFAULT_CUSTOMIZATION, ...(parsed.customization || {}) }
       }
@@ -193,13 +212,25 @@ export function initStore(): void {
     console.error('[store] 读取失败，使用默认值', e)
     cache = { ...DEFAULT }
   }
+  // 旧版明文凭证：启动即回写成密文，用户无感知、不掉登录
+  if (needReseal) {
+    console.info('[secure] 检测到明文 Cookie，正在升级为加密存储')
+    saveStore()
+    needReseal = false
+  }
 }
 
+/** 落盘副本：Cookie 加密后再写；内存 cache 始终是明文，供 API 直接使用 */
 export function saveStore(): void {
   try {
     const p = file()
     fs.mkdirSync(path.dirname(p), { recursive: true })
-    fs.writeFileSync(p, JSON.stringify(cache, null, 2), 'utf-8')
+    const disk: StoreShape = {
+      ...cache,
+      cookie: seal(cache.cookie),
+      accounts: (cache.accounts || []).map((a) => ({ ...a, cookie: seal(a.cookie) }))
+    }
+    fs.writeFileSync(p, JSON.stringify(disk, null, 2), 'utf-8')
   } catch (e) {
     console.error('[store] 保存失败', e)
   }
