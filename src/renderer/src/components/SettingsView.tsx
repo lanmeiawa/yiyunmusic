@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useApp } from '../store'
+import { LOCALES } from '../i18n'
 import { DEFAULT_SHORTCUTS, type ShortcutMap } from '../types'
 import NetImg from './NetImg'
 import { IconMusic } from './Icons'
@@ -59,7 +60,7 @@ const PRESET_COLORS = [
 ]
 
 export default function SettingsView() {
-  const { customization, setCustomization, chooseBg, bgData, theme, setTheme, setMessage } = useApp()
+  const { customization, setCustomization, chooseBg, bgData, theme, setTheme, setMessage, t } = useApp()
   const [customColor, setCustomColor] = useState(customization.primary || '#ff6b8b')
   const [appNameDraft, setAppNameDraft] = useState(customization.appName || '')
   const [welcomeColorDraft, setWelcomeColorDraft] = useState(customization.welcomeColor || '#ff6b8b')
@@ -126,6 +127,24 @@ export default function SettingsView() {
         <h1>个性化设置</h1>
         <p>自定义背景、配色、布局与播放偏好，所有修改即时生效并自动保存</p>
       </div>
+
+      {/* ===== 界面语言 ===== */}
+      <section className="settings-card">
+        <h2>{t('settings.language')}</h2>
+        <div className="settings-row wrap">
+          {LOCALES.map((l) => (
+            <button
+              key={l.value}
+              className={`settings-chip ${(customization.language || 'zh') === l.value ? 'sel' : ''}`}
+              onClick={() => {
+                setCustomization({ language: l.value })
+                setMessage(l.value === 'zh' ? '已切换为简体中文' : 'Language switched to English')
+              }}
+            >{l.label}</button>
+          ))}
+        </div>
+        <p className="settings-tip">{t('settings.languageHint')}</p>
+      </section>
 
       {/* ===== 背景图 ===== */}
       <section className="settings-card">

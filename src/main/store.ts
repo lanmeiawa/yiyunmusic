@@ -85,6 +85,8 @@ export interface Customization {
   shortcuts: ShortcutMap
   /** 搜索历史（最近在前，最多 12 条） */
   searchHistory: string[]
+  /** 界面语言 zh / en */
+  language: 'zh' | 'en'
 }
 
 export const DEFAULT_CUSTOMIZATION: Customization = {
@@ -110,7 +112,8 @@ export const DEFAULT_CUSTOMIZATION: Customization = {
   eqEnabled: true,
   gpuAcceleration: true,
   shortcuts: { ...DEFAULT_SHORTCUTS },
-  searchHistory: []
+  searchHistory: [],
+  language: 'zh'
 }
 
 /** 主窗口位置与大小记忆 */
@@ -122,6 +125,16 @@ export interface WindowBounds {
   maximized: boolean
 }
 
+/** 已保存的网易云账号（多账号切换） */
+export interface StoredAccount {
+  id: string
+  cookie: string
+  nickname: string
+  avatarUrl: string
+  vipType: number
+  addedAt: number
+}
+
 export interface StoreShape {
   cookie: string
   profile: Profile | null
@@ -131,12 +144,16 @@ export interface StoreShape {
   quality: string
   desktopLyrics: DesktopLyricsSettings
   customization: Customization
+  accounts: StoredAccount[]
+  activeAccountId: string
   windowBounds?: WindowBounds
 }
 
 const DEFAULT: StoreShape = {
   cookie: '',
   profile: null,
+  accounts: [],
+  activeAccountId: '',
   volume: 0.8,
   playHistory: [],
   theme: 'light',
@@ -196,6 +213,47 @@ export function setCookie(cookie: string): void {
 
 export function getCookie(): string {
   return cache.cookie
+}
+
+export function getAccounts(): StoredAccount[] {
+  return cache.accounts || []
+}
+
+/** 登录成功或刷新资料后，把当前账号写入账号列表并标记为当前账号 */
+export function upsertAccount(p: { userId: number; nickname: string; avatarUrl: string; vipType: number }): void {
+  if (!cache.cookie) return
+  const id = String(p.userId)
+  const list = [...(cache.accounts || [])]
+  const idx = list.findIndex((a) => a.id === id)
+  const item: StoredAccount = {
+    id,
+    cookie: cache.cookie,
+    nickname: p.nickname || list[idx]?.nickname || '未命名账号',
+    avatarUrl: p.avatarUrl || list[idx]?.avatarUrl || '',
+    vipType: p.vipType || 0,
+    addedAt: list[idx]?.addedAt || Date.now()
+  }
+  if (idx >= 0) list[idx] = item
+  else list.unshift(item)
+  cache.accounts = list
+  cache.activeAccountId = id
+  saveStore()
+}
+
+export function setActiveAccountId(id: string): void {
+  cache.activeAccountId = id
+  saveStore()
+}
+
+export function removeAccountById(id: string): StoredAccount[] {
+  cache.accounts = (cache.accounts || []).filter((a) => a.id !== id)
+  if (cache.activeAccountId === id) {
+    cache.activeAccountId = ''
+    cache.cookie = ''
+    cache.profile = null
+  }
+  saveStore()
+  return cache.accounts
 }
 
 export function setProfile(profile: Profile | null): void {

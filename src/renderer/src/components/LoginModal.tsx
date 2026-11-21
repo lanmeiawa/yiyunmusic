@@ -5,7 +5,7 @@ import { useApp } from '../store'
 type Step = 'init' | 'loading' | 'ready' | 'expired' | 'success' | 'error'
 
 export default function LoginModal() {
-  const { setProfile, loginOpen } = useApp()
+  const { setProfile, loginOpen, refreshAccounts } = useApp()
   const [open, setOpen] = useState(true)
   const [step, setStep] = useState<Step>('loading')
   const [qrimg, setQrimg] = useState('')
@@ -45,8 +45,9 @@ export default function LoginModal() {
             setTip('登录成功，正在进入…')
             setStep('success')
             const profile = await window.eApi.profile()
-            setTimeout(() => {
+            setTimeout(async () => {
               if (profile) setProfile(profile)
+              await refreshAccounts()
               setOpen(false)
             }, 700)
           } else if (code === 800) {

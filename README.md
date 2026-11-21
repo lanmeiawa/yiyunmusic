@@ -1,13 +1,15 @@
 # yiyunmusic · 网易云音乐第三方桌面客户端
 
+[简体中文](README.md) | [English](README.en.md)
+
 一个以**动态歌词**为核心、支持**多套主题**的网易云音乐第三方桌面客户端。基于 Electron + React + NeteaseCloudMusicApi 构建。
 
 ## 下载
 
 前往 [Releases](https://github.com/lanmeiawa/yiyunmusic/releases) 下载最新版：
 
-- **yiyunmusic-Setup-1.0.3.exe** — 安装版（可自定义安装目录、自动创建快捷方式）
-- **yiyunmusic-portable-1.0.3.exe** — 免安装，双击即用，可放 U 盘携带
+- **yiyunmusic-Setup-2.0.0.exe** — 安装版（可自定义安装目录、自动创建快捷方式）
+- **yiyunmusic-portable-2.0.0.exe** — 免安装，双击即用，可放 U 盘携带
 
 > Windows 10 / 11 x64。
 
@@ -25,6 +27,9 @@
 
 ## 功能
 
+- **多语言**：简体中文 / English，设置内即时切换并持久保存
+- **多账号**：保存多个网易云账号，一键切换，无需重复扫码
+- **私人 FM**：侧边栏入口，随时进入个性化推荐
 - **扫码登录**：调用网易云官方扫码登录接口，实时生成二维码，App 扫码并确认后自动登录；登录态本地持久化，下次启动免登录
 - **全局搜索**：标题栏搜索框，搜索单曲 / 歌单，双击即可播放或打开歌单
 - **歌单同步**：读取你的全部歌单、歌单详情与曲目列表（支持 VIP 标识）

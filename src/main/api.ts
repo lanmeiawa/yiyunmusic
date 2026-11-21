@@ -44,7 +44,7 @@ import {
   comment_hot,
   comment_music
 } from 'NeteaseCloudMusicApi'
-import { getCookie, mergeCookie, setCookie, setProfile, pushHistory } from './store'
+import { getCookie, mergeCookie, setCookie, setProfile, pushHistory, upsertAccount, getAccounts, setActiveAccountId } from './store'
 
 type ApiFn = (params: Record<string, any>) => Promise<any>
 
@@ -153,10 +153,28 @@ export async function refreshProfile() {
       vipType: p.vipType ?? 0,
       vipLevel: p.vipDetail?.level
     })
+    // 多账号：登录/刷新成功后保存该账号，便于之后直接切换
+    upsertAccount({
+      userId: p.userId,
+      nickname: p.nickname,
+      avatarUrl: p.avatarUrl,
+      vipType: p.vipType ?? 0
+    })
     return getProfile()
   }
   setProfile(null)
   return null
+}
+
+/** 切换已保存账号：替换 cookie 并刷新资料；cookie 失效时返回 expired */
+export async function switchAccount(id: string) {
+  const acc = getAccounts().find((a) => a.id === id)
+  if (!acc) return { ok: false, reason: 'missing' as const, profile: null }
+  setCookie(acc.cookie)
+  const profile = await refreshProfile()
+  if (!profile) return { ok: false, reason: 'expired' as const, profile: null }
+  setActiveAccountId(id)
+  return { ok: true, reason: '' as const, profile }
 }
 
 import { getStore } from './store'

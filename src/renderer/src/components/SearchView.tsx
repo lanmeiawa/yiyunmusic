@@ -9,7 +9,7 @@ import NetImg from './NetImg'
 type Category = 'all' | 'songs' | 'playlists' | 'albums' | 'artists' | 'shows' | 'lyrics'
 
 export default function SearchView() {
-  const { searchKeyword, searchResults, searchError, searching, playTrack, openPlaylist, openArtist, openAlbum, doSearch } = useApp()
+  const { searchKeyword, searchResults, searchError, searching, playTrack, openPlaylist, openArtist, openAlbum, doSearch, t } = useApp()
   const { songs, playlists, shows, albums, artists, lyricHits } = searchResults
   const [cat, setCat] = useState<Category>('all')
 
@@ -40,8 +40,8 @@ export default function SearchView() {
       <div className="search-head">
         <div className="search-head-icon"><IconSearch size={24} /></div>
         <div>
-          <h1>搜索「{searchKeyword}」</h1>
-          <p>{searching ? '正在搜索…' : `找到 ${tabs[0].count} 条相关内容`}</p>
+          <h1>{t('search.title', { keyword: searchKeyword })}</h1>
+          <p>{searching ? t('search.searching') : t('search.results', { count: tabs[0].count })}</p>
         </div>
       </div>
 
@@ -64,9 +64,9 @@ export default function SearchView() {
       ) : !hasAny ? (
         <div className="search-empty">
           <IconSearch size={44} />
-          <h3>{searchError ? '搜索遇到问题' : '没有找到相关内容'}</h3>
-          <p>{searchError || '换个关键词试试吧'}</p>
-          <button className="search-retry" onClick={() => doSearch(searchKeyword)}>重新搜索</button>
+          <h3>{searchError ? t('search.error') : t('search.empty')}</h3>
+          <p>{searchError || t('search.emptyHint')}</p>
+          <button className="search-retry" onClick={() => doSearch(searchKeyword)}>{t('search.retry')}</button>
         </div>
       ) : (
         <>

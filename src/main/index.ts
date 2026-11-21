@@ -5,7 +5,8 @@ import path from 'node:path'
 import {
   initStore, getStore, setVolume, clearSession, getCookie, setCookie,
   setTheme, setQuality, setDesktopLyrics, setCustomization, setWindowBounds,
-  DEFAULT_SHORTCUTS, type ThemeName, type Customization, type ShortcutMap
+  DEFAULT_SHORTCUTS, type ThemeName, type Customization, type ShortcutMap,
+  getAccounts, removeAccountById
 } from './store'
 import {
   callApi,
@@ -17,7 +18,8 @@ import {
   getSongUrl,
   getSongQualities,
   clearQualityCache,
-  smartSearch
+  smartSearch,
+  switchAccount
 } from './api'
 import { startAudioProxy, stopAudioProxy, registerAudioUrl, registerLocalAudio } from './audio-proxy'
 
@@ -578,6 +580,15 @@ function setupIpc() {
     return r
   })
   ipcMain.handle('auth:profile', async () => refreshProfile())
+  // 多账号管理
+  ipcMain.handle('accounts:list', () => getAccounts().map(({ cookie, ...rest }) => rest))
+  ipcMain.handle('accounts:switch', async (_e, id: string) => {
+    const res = await switchAccount(id)
+    if (res.ok) clearQualityCache()
+    return res
+  })
+  ipcMain.handle('accounts:remove', (_e, id: string) => removeAccountById(id))
+
   ipcMain.handle('auth:logout', async () => {
     await doLogout()
     clearSession()
