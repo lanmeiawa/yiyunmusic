@@ -1,6 +1,6 @@
 # yiyunmusic · 把动态歌词做到极致的网易云第三方客户端
 
-[简体中文](README.md) | [English](README.en.md)
+[简体中文](README.md) | [English](README.en.md) · [更新日志](CHANGELOG.md)
 
 > **一句话**：一个专注于「动态歌词」的网易云音乐第三方桌面客户端 —— 逐字卡拉OK扫光、桌面歌词悬浮窗、歌词搜歌，其余一切从简。
 
