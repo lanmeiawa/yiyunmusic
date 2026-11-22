@@ -87,4 +87,4 @@ yiyunmusic is an independently developed music player. You sign in with your own
 
 - Music, artwork and lyrics belong to their respective owners. This project stores and distributes no audio files; it only plays and displays content on your machine.
 - If you enjoy something, the best way to support it is through the official service.
-- License: **PolyForm Noncommercial 1.0.0** — personal, study and research use are welcome; for commercial use, please contact the author for permission. See [LICENSE](LICENSE).
+- License: **PolyForm Noncommercial 1.0.0** — personal, study and research use are welcome; for commercial use, please contact the author for permission. See [LICENSE](LICENSE) (Chinese summary: [docs/LICENSE.zh.md](docs/LICENSE.zh.md)).
