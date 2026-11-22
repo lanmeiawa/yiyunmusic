@@ -29,12 +29,13 @@ export default function PlayerBar() {
   const profileVip = profile?.vipType || 0
 
   const activeQuality = QUALITY_OPTIONS.find((q) => q.level === quality) || QUALITY_OPTIONS[2]
-  // 接口实际返回的音质优先展示（用户选的「无损」可能被降级为「极高」）
-  const actualLevel = (currentQualityInfo?.level || '').toLowerCase()
-  const actualQuality = QUALITY_OPTIONS.find((q) => q.level === actualLevel)
+  // 缩略标签跟随「当前实际播放档位」currentQuality：
+  // 切换音质时 setQuality 会立即更新它，所以标签马上显示刚选的档位，不再停在旧值；
+  // 接口若把「无损」降级为「极高」，resolveAndPlay 成功后会用真实 level 再修正。
   const qName = (level: string) => qualityLabel(locale, level)
+  const actualQuality = QUALITY_OPTIONS.find((q) => q.level === (currentQualityInfo?.level || '').toLowerCase())
   const tagLabel = current
-    ? (currentQuality === '本地' ? '本地' : qName(actualQuality?.level || quality))
+    ? (currentQuality === '本地' ? '本地' : qName((currentQuality || quality).toLowerCase()))
     : qName(quality)
   const actualDesc = currentQualityInfo
     ? [
