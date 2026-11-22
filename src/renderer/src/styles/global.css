@@ -706,25 +706,81 @@ input, button, .album-card, .pl-row, .quality-option, .theme-option,
   .user-avatar { width: 26px; height: 26px; }
 }
 
-/* ==================== 三种 UI 布局 ==================== */
-/* 经典：保持默认（原骨架不改动） */
+/* ==================== 三种 UI 布局（整体骨架级差异）==================== */
+/* 经典 classic：左侧栏 + 主区 + 底部播放器（默认骨架，无需改） */
 
-/* 沉浸：内容区更宽、留白更大、弱化边框，强调封面与歌词 */
-html[data-layout="immersive"] .sidebar { width: 180px; }
-html[data-layout="immersive"] .content { padding: 26px 5vw 40px; }
-html[data-layout="immersive"] .app-body { gap: 6px; }
-html[data-layout="immersive"] .settings-card,
-html[data-layout="immersive"] .playlist-view,
-html[data-layout="immersive"] .online-radio-view { max-width: 1080px; margin-left: auto; margin-right: auto; }
-html[data-layout="immersive"] .nav-item { border-radius: 12px; }
-html[data-layout="immersive"] .playerbar { background: color-mix(in srgb, var(--card) 88%, transparent); backdrop-filter: blur(24px); }
+/* ---------- 沉浸 immersive：窄图标侧栏 + 居中大卡片 + 悬浮播放器 ---------- */
+html[data-layout="immersive"] .titlebar {
+  background: transparent; border-bottom: 1px solid transparent;
+}
+html[data-layout="immersive"] .app-body { gap: 0; }
+html[data-layout="immersive"] .sidebar {
+  width: 68px; min-width: 68px; padding: 16px 8px;
+  background: transparent; border-right: 1px solid var(--border);
+}
+html[data-layout="immersive"] .sidebar .side-section-title,
+html[data-layout="immersive"] .sidebar .nav-item span,
+html[data-layout="immersive"] .sidebar .playlist-scroll,
+html[data-layout="immersive"] .sidebar .side-count,
+html[data-layout="immersive"] .sidebar .user-meta,
+html[data-layout="immersive"] .sidebar .side-footer .nav-item span { display: none !important; }
+html[data-layout="immersive"] .sidebar .side-footer { justify-content: center; }
+html[data-layout="immersive"] .sidebar .nav-item {
+  justify-content: center; padding: 10px 0; width: 52px; margin: 0 auto;
+  border-radius: 14px;
+}
+html[data-layout="immersive"] .sidebar .side-nav { gap: 8px; }
+html[data-layout="immersive"] .content {
+  background: transparent;
+  padding: 30px clamp(24px, 8vw, 140px) 120px;
+}
+html[data-layout="immersive"] .content > * {
+  max-width: 1100px; margin-left: auto; margin-right: auto;
+}
+html[data-layout="immersive"] .playerbar {
+  background: color-mix(in srgb, var(--card) 82%, transparent);
+  backdrop-filter: blur(28px); border-top: 1px solid var(--primary-tint);
+}
 
-/* 杂志：侧栏更宽、内容区双栏卡片、封面更大更圆润 */
-html[data-layout="magazine"] .sidebar { width: 232px; border-right: none; }
-html[data-layout="magazine"] .content { padding: 22px 30px 40px; }
-html[data-layout="magazine"] .section-title { font-size: 20px; letter-spacing: 0.5px; }
+/* ---------- 杂志 magazine：顶部横向导航 + 全宽瀑布卡片 + 悬浮播放器 ---------- */
+html[data-layout="magazine"] .app-body {
+  flex-direction: column;
+}
+html[data-layout="magazine"] .sidebar {
+  width: 100%; min-width: 0; height: auto; flex-direction: row; align-items: center;
+  border-right: none; border-bottom: 1px solid var(--border);
+  padding: 8px 22px; gap: 18px; overflow-x: auto; overflow-y: hidden;
+  background: var(--bg-side);
+}
+html[data-layout="magazine"] .sidebar .side-group {
+  display: contents;
+}
+html[data-layout="magazine"] .sidebar .side-section-title,
+html[data-layout="magazine"] .sidebar .playlist-scroll,
+html[data-layout="magazine"] .sidebar .side-footer,
+html[data-layout="magazine"] .sidebar .side-count { display: none !important; }
+html[data-layout="magazine"] .sidebar .side-nav {
+  flex-direction: row; gap: 6px; align-items: center; flex-shrink: 0;
+}
+html[data-layout="magazine"] .sidebar .nav-item {
+  flex-direction: row; width: auto; padding: 7px 14px; border-radius: 18px;
+  white-space: nowrap;
+}
+html[data-layout="magazine"] .content {
+  padding: 26px clamp(20px, 6vw, 90px) 130px;
+}
 html[data-layout="magazine"] .playlist-grid,
-html[data-layout="magazine"] .or-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px; }
+html[data-layout="magazine"] .or-grid,
+html[data-layout="magazine"] .radio-grid {
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px;
+}
 html[data-layout="magazine"] .playlist-cover,
-html[data-layout="magazine"] .or-card-cover { border-radius: 16px; aspect-ratio: 1 / 1; }
-html[data-layout="magazine"] .settings-card { border-radius: 18px; }
+html[data-layout="magazine"] .or-card-cover {
+  border-radius: 18px; aspect-ratio: 1 / 1;
+}
+html[data-layout="magazine"] .section-title { font-size: 22px; letter-spacing: 0.6px; }
+html[data-layout="magazine"] .settings-card { border-radius: 20px; }
+html[data-layout="magazine"] .playerbar {
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+  backdrop-filter: blur(20px);
+}
