@@ -37,6 +37,22 @@ const api = {
   // 有声书全量聚合（分页遍历 + 缓存）
   djFetchAll: () => ipcRenderer.invoke('dj:fetch-all'),
 
+  // 在线收音机（Radio Browser）
+  radioStations: (q?: Record<string, any>) => ipcRenderer.invoke('radio:stations', q || {}),
+  radioFacets: (kind: 'countries' | 'tags') => ipcRenderer.invoke('radio:facets', kind),
+  radioClick: (uuid: string) => ipcRenderer.invoke('radio:click', uuid),
+
+  // 本地语音转文本
+  asrStatus: () => ipcRenderer.invoke('asr:status'),
+  asrDownload: () => ipcRenderer.invoke('asr:download'),
+  asrDelete: () => ipcRenderer.invoke('asr:delete'),
+  asrRecognize: (samples: number[]) => ipcRenderer.invoke('asr:recognize', samples),
+  onAsrProgress: (cb: (p: { phase: string; pct: number }) => void) => {
+    const handler = (_e: any, p: { phase: string; pct: number }) => cb(p)
+    ipcRenderer.on('asr:progress', handler)
+    return () => ipcRenderer.removeListener('asr:progress', handler)
+  },
+
   // 自定义应用图标
   customIconSelect: () => ipcRenderer.invoke('custom-icon-select'),
 
