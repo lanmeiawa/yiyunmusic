@@ -3,6 +3,7 @@ import { useApp } from '../store'
 import {
   IconHome, IconList, IconMusic, IconHeart, IconVip, IconClock, IconPalette, IconFM
 } from './Icons'
+import { IconMonitor } from './IconsExtra'
 
 /**
  * 左侧导航：按「音乐 / 我的 / 歌单 / 系统」分组，
@@ -39,6 +40,7 @@ export default function Sidebar() {
         <div className="side-nav">
           {navItem(t('nav.local'), <IconList size={19} />, view === 'local', () => setView('local'))}
           {navItem(t('nav.radio'), <IconVip size={19} />, view === 'radio', () => setView('radio'))}
+          {navItem(t('nav.onlineRadio'), <IconMonitor size={19} />, view === 'onlineRadio', () => setView('onlineRadio'))}
           {navItem(t('nav.profile'), <IconHeart size={19} />, view === 'profile', () => setView('profile'))}
         </div>
       </div>
