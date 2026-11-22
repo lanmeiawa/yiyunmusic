@@ -78,6 +78,8 @@ export async function downloadModel(win?: Electron.BrowserWindow): Promise<{ ok:
   try {
     await downloadFile('tokens.txt', TOKENS_FILE(), (pct) => send('tokens', pct))
     await downloadFile('model.int8.onnx', MODEL_FILE(), (pct) => send('model', pct))
+    // 新模型就绪后丢弃旧识别器，下次识别重新加载
+    recognizer = null
     // 下载成功后清除"想下载"标记
     try { if (fs.existsSync(WANT_FILE())) fs.unlinkSync(WANT_FILE()) } catch {}
     return { ok: true }
@@ -103,6 +105,7 @@ export function consumeModelWanted(): boolean {
 
 export function deleteModel(): boolean {
   try {
+    recognizer = null
     if (fs.existsSync(MODEL_FILE())) fs.unlinkSync(MODEL_FILE())
     if (fs.existsSync(TOKENS_FILE())) fs.unlinkSync(TOKENS_FILE())
     return true
@@ -116,14 +119,19 @@ function getRecognizer() {
   const st = modelStatus()
   if (!st.ready) throw new Error('模型未下载')
   const sherpa = require('sherpa-onnx')
+  // 注意：tokens / numThreads / provider 必须放在 modelConfig 顶层，
+  // 放到 senseVoice 子对象里会被底层忽略（等于没词表，识别结果永远为空）
   recognizer = sherpa.createOfflineRecognizer({
+    featConfig: { sampleRate: 16000, featureDim: 80 },
     modelConfig: {
       senseVoice: {
         model: MODEL_FILE(),
-        tokens: TOKENS_FILE(),
-        numThreads: 2,
-        useInverseTextNormalization: true
-      }
+        language: 'auto',
+        useInverseTextNormalization: 1
+      },
+      tokens: TOKENS_FILE(),
+      numThreads: 2,
+      provider: 'cpu'
     }
   })
   return recognizer
@@ -131,11 +139,15 @@ function getRecognizer() {
 
 /** 识别一段 16k 单声道 PCM（Float32Array）文本 */
 export function recognize(pcm: Float32Array): string {
+  if (!pcm || pcm.length < 1600) return ''
   const rec = getRecognizer()
-  const stream = rec.createStream({ sampleRate: 16000 })
-  stream.acceptWaveform({ samples: pcm, sampleRate: 16000 })
+  const stream = rec.createStream()
+  // 接口是位置参数 acceptWaveform(sampleRate, samples)，传对象会直接抛异常
+  stream.acceptWaveform(16000, pcm)
   rec.decode(stream)
-  return (rec.getResult(stream)?.text || '').trim()
+  const text = (rec.getResult(stream)?.text || '').trim()
+  try { stream.free?.() } catch { /* 忽略 */ }
+  return text
 }
 
 /** 注册 IPC（在 setupIpc 中调用） */
