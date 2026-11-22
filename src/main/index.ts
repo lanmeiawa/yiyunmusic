@@ -21,7 +21,7 @@ import {
   smartSearch,
   switchAccount
 } from './api'
-import { startAudioProxy, stopAudioProxy, registerAudioUrl, registerLocalAudio } from './audio-proxy'
+import { startAudioProxy, stopAudioProxy, registerAudioUrl, registerLocalAudio, hlsProxyUrl, probeStream } from './audio-proxy'
 import { registerAsrIpc } from './asr'
 
 let mainWindow: BrowserWindow | null = null
@@ -837,6 +837,12 @@ function setupIpc() {
   ipcMain.handle('radio:click', async (_e, uuid: string) => {
     try { const mod = await import('./api-radio'); await mod.registerClick(uuid) } catch { /* 静默 */ }
   })
+  // 探测电台地址类型（HLS / 直连音频 / 失效），用于选择正确的播放方式
+  ipcMain.handle('radio:probe', async (_e, url: string) => {
+    try { return await probeStream(url) } catch (e: any) { return { kind: 'dead', url, error: e?.message || String(e) } }
+  })
+  // 生成 HLS 本地代理地址（改写播放列表 + 分片，绕过 CORS）
+  ipcMain.handle('radio:hls-url', async (_e, url: string) => hlsProxyUrl(url))
 
   // ===== 下载功能 =====
   // 选择下载目录
