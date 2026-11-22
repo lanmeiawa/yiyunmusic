@@ -36,6 +36,8 @@ let eqEnabled = true
 
 export function currentEqBands(): number[] { return [...bands] }
 export function isEqEnabled(): boolean { return eqEnabled }
+/** 音频图是否已经建立（一旦建立，跨域音源会被静音，必须走同源代理） */
+export function hasAudioGraph(): boolean { return !!ctx }
 
 /** 开启/旁通均衡器。旁通时不影响频谱读取，可视化仍可正常工作。 */
 export function setEqEnabled(enabled: boolean) {
