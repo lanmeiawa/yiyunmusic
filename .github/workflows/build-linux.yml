@@ -46,16 +46,6 @@ jobs:
           node -e "try{require('fs').unlinkSync('package-lock.json')}catch(e){}"
           npm install
 
-      - name: Download offline ASR model
-        shell: bash
-        run: |
-          mkdir -p build/asr-model
-          BASE="https://hf-mirror.com/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/main"
-          # 模型与词表下载（失败不阻断构建：应用内仍可从镜像按需下载）
-          curl -fsSL --retry 3 "$BASE/model.int8.onnx" -o build/asr-model/model.int8.onnx || echo "model download failed, in-app download will be used"
-          curl -fsSL --retry 3 "$BASE/tokens.txt" -o build/asr-model/tokens.txt || echo "tokens download failed"
-          ls -lh build/asr-model || true
-
       - name: Build app
         run: npm run build
 
