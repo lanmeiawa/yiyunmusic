@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useApp } from '../store'
 import { IconPlay, IconVip, IconSearch } from './Icons'
 import { formatTime } from '../utils/lrc'
@@ -6,34 +6,28 @@ import { coverUrl } from '../utils/cover'
 import TrackActions from './TrackActions'
 import NetImg from './NetImg'
 
-type Category = 'all' | 'songs' | 'playlists' | 'albums' | 'artists' | 'shows' | 'lyrics'
+type Category = 'all' | 'songs' | 'playlists' | 'albums' | 'artists'
 
 export default function SearchView() {
-  const { searchKeyword, searchResults, searchError, searching, playTrack, openPlaylist, openArtist, openAlbum, doSearch, t } = useApp()
-  const { songs, playlists, shows, albums, artists, lyricHits } = searchResults
+  const { searchKeyword, searchResults, searchError, searching, searchExtraLoading, loadSearchSection, playTrack, openPlaylist, openArtist, openAlbum, doSearch, t } = useApp()
+  const { songs, playlists, albums, artists } = searchResults
   const [cat, setCat] = useState<Category>('all')
 
+  // 专辑 / 听书 / 歌词：点开对应分类时再请求，减少搜索瞬间的并发
+  useEffect(() => {
+    if (cat === 'albums') loadSearchSection('albums')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cat, searchKeyword])
+
   const tabs: { id: Category; label: string; count: number }[] = [
-    { id: 'all', label: '全部', count: songs.length + playlists.length + (shows?.length || 0) + (albums?.length || 0) + (artists?.length || 0) + (lyricHits?.length || 0) },
+    { id: 'all', label: '全部', count: songs.length + playlists.length + (albums?.length || 0) + (artists?.length || 0) },
     { id: 'songs', label: '单曲', count: songs.length },
     { id: 'playlists', label: '歌单', count: playlists.length },
     { id: 'albums', label: '专辑', count: albums?.length || 0 },
-    { id: 'artists', label: '歌手', count: artists?.length || 0 },
-    { id: 'shows', label: '听书', count: shows?.length || 0 },
-    { id: 'lyrics', label: '歌词', count: lyricHits?.length || 0 }
+    { id: 'artists', label: '歌手', count: artists?.length || 0 }
   ]
   const show = (id: Category) => cat === 'all' || cat === id
   const hasAny = tabs.some((t) => t.id !== 'all' && t.count > 0)
-
-  const playLyricHit = (hit: { id: number; name: string; artists: string }) => {
-    const found = songs.find((s) => s.id === hit.id)
-    if (found) { playTrack(found, songs); return }
-    playTrack({
-      id: hit.id, name: hit.name,
-      artists: hit.artists ? hit.artists.split(' / ').map((n) => ({ id: 0, name: n.trim() })) : [{ id: 0, name: '未知歌手' }],
-      album: { id: 0, name: '', picUrl: '' }, duration: 0
-    })
-  }
 
   return (
     <div className="search-view">
@@ -82,38 +76,6 @@ export default function SearchView() {
                     </div>
                     <div className="album-name" title={pl.name}>{pl.name}</div>
                     <div className="album-artist">{pl.trackCount} 首 · {pl.creator?.nickname || '网易云音乐'}</div>
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {show('shows') && !!shows?.length && (
-            <section className="search-section">
-              <h2>听书节目</h2>
-              <div className="album-grid">
-                {shows.slice(0, cat === 'shows' ? 30 : 8).map((t, i) => (
-                  <button key={`${t.id}-${i}`} className="album-card" onClick={(e) => { e.stopPropagation(); playTrack(t, shows) }}>
-                    <div className="album-cover">
-                      <NetImg src={coverUrl(t.album?.picUrl, 300)} alt={t.name} />
-                      <span className="album-play"><IconPlay size={18} /></span>
-                    </div>
-                    <div className="album-name" title={t.name}>{t.name}</div>
-                    <div className="album-artist">{t.artists[0]?.name || '电台'}</div>
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {show('lyrics') && !!lyricHits?.length && (
-            <section className="search-section">
-              <h2>歌词</h2>
-              <div className="lyric-hit-grid">
-                {lyricHits.map((hit) => (
-                  <button key={hit.id} className="lyric-hit-card" onClick={() => playLyricHit(hit)} title="点击播放这首歌">
-                    <div className="lyric-hit-title">{hit.name} <span>{hit.artists}</span></div>
-                    <div className="lyric-hit-text">「{hit.snippet || '这首歌暂无歌词片段'}」</div>
                   </button>
                 ))}
               </div>
