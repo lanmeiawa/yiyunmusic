@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react'
 import type {
-  Profile, Playlist, Track, SongUrlResult, LyricLine, ThemeName, DesktopLyricsSettings
+  Profile, Playlist, Track, SongUrlResult, LyricLine, ThemeName, DesktopLyricsSettings,
+  RadioStation, RadioTranscript
 } from './types'
 import { parseLyric, findActiveIndex, computeWordProgress } from './utils/lrc'
 import { DEFAULT_CUSTOMIZATION, type Customization } from './types'
@@ -32,7 +33,7 @@ import type { CommentItem, RadioCategory, LyricSearchItem, DownloadDialog, Quali
 import { translate, type Locale } from './i18n'
 import { coverUrl } from './utils/cover'
 import { probeLabel, formatSize, levelLabel } from './utils/quality'
-import { EQ_PRESETS, ensureGraph, configureEq, setEqEnabled } from './utils/audioGraph'
+import { EQ_PRESETS, ensureGraph, configureEq, setEqEnabled, startPcmCapture, stopPcmCapture } from './utils/audioGraph'
 
 interface PlayerState {
   current: Track | null
@@ -96,8 +97,24 @@ interface AppContextValue {
   currentCover: string
 
   // 视图
-  view: 'discover' | 'playlist' | 'lyrics' | 'search' | 'history' | 'settings' | 'radio' | 'profile' | 'local'
-  setView: (v: 'discover' | 'playlist' | 'lyrics' | 'search' | 'history' | 'settings' | 'radio' | 'profile' | 'local') => void
+  view: 'discover' | 'playlist' | 'lyrics' | 'search' | 'history' | 'settings' | 'radio' | 'profile' | 'local' | 'onlineRadio'
+  setView: (v: 'discover' | 'playlist' | 'lyrics' | 'search' | 'history' | 'settings' | 'radio' | 'profile' | 'local' | 'onlineRadio') => void
+
+  // 在线收音机
+  radioStations: RadioStation[]
+  netRadioLoading: boolean
+  radioQuery: { mode: string; keyword: string; countryCode: string; tag: string }
+  setRadioQuery: (patch: Partial<{ mode: string; keyword: string; countryCode: string; tag: string }>) => void
+  loadRadioStations: () => Promise<void>
+  radioCountries: string[]
+  radioTags: string[]
+  currentStation: RadioStation | null
+  playRadioStation: (s: RadioStation) => Promise<void>
+  stopRadio: () => void
+  // 收音机实时转写
+  transcripts: RadioTranscript[]
+  transcriptActive: boolean
+  setTranscriptActive: (v: boolean) => void
 
   // 沉浸全屏：仅保留歌词或可视化内容
   immersive: boolean
@@ -223,7 +240,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [lyricLines, setLyricLines] = useState<LyricLine[]>([])
   const [songUrlLoading, setSongUrlLoading] = useState(false)
   const [message, setMessageState] = useState('')
-  const [view, setView] = useState<'discover' | 'playlist' | 'lyrics' | 'search' | 'history' | 'settings' | 'radio' | 'profile' | 'local'>('discover')
+  const [view, setView] = useState<'discover' | 'playlist' | 'lyrics' | 'search' | 'history' | 'settings' | 'radio' | 'profile' | 'local' | 'onlineRadio'>('discover')
+  // 在线收音机状态
+  const [radioStations, setRadioStations] = useState<RadioStation[]>([])
+  const [netRadioLoading, setNetRadioLoading] = useState(false)
+  const [radioQuery, setRadioQueryState] = useState({ mode: 'top', keyword: '', countryCode: 'CN', tag: '' })
+  const [radioCountries, setRadioCountries] = useState<string[]>([])
+  const [radioTags, setRadioTags] = useState<string[]>([])
+  const [currentStation, setCurrentStation] = useState<RadioStation | null>(null)
+  const [transcripts, setTranscripts] = useState<RadioTranscript[]>([])
+  const [transcriptActive, setTranscriptActive] = useState(false)
   const [theme, setThemeState] = useState<ThemeName>('light')
   const [quality, setQualityState] = useState<string>('exhigh')
   const [currentQuality, setCurrentQuality] = useState<string>('exhigh')
@@ -401,6 +427,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     document.documentElement.classList.toggle('sidebar-collapsed', customization.sidebarCollapsed)
   }, [customization.sidebarCollapsed])
+
+  // UI 布局（经典 / 沉浸 / 杂志）→ data-layout 属性驱动 CSS
+  useEffect(() => {
+    document.documentElement.setAttribute('data-layout', customization.layout || 'classic')
+  }, [customization.layout])
+
+  // 进入在线收音机：首次拉取列表与分类；查询条件变化时重新搜索
+  useEffect(() => {
+    if (view !== 'onlineRadio') return
+    loadRadioStations()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, radioQuery])
+  useEffect(() => {
+    if (view === 'onlineRadio' && radioCountries.length === 0) loadRadioFacets()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view])
 
   // 播放倍速
   useEffect(() => {
@@ -752,6 +794,97 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [radios, setRadios] = useState<RadioInfo[]>([])
   const [radiosLoading, setRadiosLoading] = useState(false)
   const [activeRadio, setActiveRadio] = useState<RadioInfo | null>(null)
+
+  // ===== 在线收音机（Radio Browser，全球网络电台）=====
+  const setRadioQuery = useCallback((patch: Partial<{ mode: string; keyword: string; countryCode: string; tag: string }>) => {
+    setRadioQueryState((prev) => ({ ...prev, ...patch }))
+  }, [])
+
+  const loadRadioStations = useCallback(async () => {
+    setNetRadioLoading(true)
+    try {
+      const list = await window.eApi.radioStations(radioQuery)
+      if (Array.isArray(list)) setRadioStations(list)
+      else setRadioStations([])
+    } catch { setRadioStations([]) }
+    setNetRadioLoading(false)
+  }, [radioQuery])
+
+  // 首次进入在线收音机时拉取国家/标签分类
+  const loadRadioFacets = useCallback(async () => {
+    try {
+      const [countries, tags] = await Promise.all([
+        window.eApi.radioFacets('countries').catch(() => []),
+        window.eApi.radioFacets('tags').catch(() => [])
+      ])
+      if (Array.isArray(countries)) setRadioCountries(countries.slice(0, 60))
+      if (Array.isArray(tags)) setRadioTags(tags.slice(0, 60))
+    } catch { /* 分类失败不影响电台列表 */ }
+  }, [])
+
+  // 播放网络电台：把流地址注册到本地代理（同源，便于 Web Audio 分析与转写）
+  const playRadioStation = useCallback(async (s: RadioStation) => {
+    const streamUrl = s.urlResolved || s.url
+    if (!streamUrl) { setMessage('该电台暂无可用流地址'); return }
+    try { window.eApi.radioClick(s.stationuuid).catch(() => {}) } catch { /* 上报失败静默 */ }
+    setCurrentStation(s)
+    setTranscripts([])
+    stopPcmCapture()
+    setTranscriptActive(false)
+    if (!audio) { setMessage('音频未就绪，请稍后重试'); return }
+    let src = ''
+    try { src = await window.eApi.audioRegister(streamUrl).catch(() => '') } catch { src = '' }
+    audio.crossOrigin = 'anonymous'
+    audio.src = src || streamUrl
+    // 电台无时长概念，进度条隐藏由 currentStation 决定
+    setPlayer((p) => ({
+      ...p,
+      current: {
+        id: Math.abs(hashCode(s.stationuuid)),
+        name: s.name,
+        artists: [{ id: 0, name: s.country || '在线收音机' }],
+        album: { id: 0, name: s.tags.slice(0, 2).join(' / ') || '在线电台', picUrl: s.favicon || '' },
+        duration: 0,
+        fee: 0,
+        mv: 0,
+        alias: [],
+        streamUrl
+      } as Track,
+      isPlaying: true
+    }))
+    audio.play().catch(() => setMessage('电台播放被拦截，请再次点击播放'))
+  }, [setMessage])
+
+  const stopRadio = useCallback(() => {
+    setCurrentStation(null)
+    setTranscriptActive(false)
+    setTranscripts([])
+    stopPcmCapture()
+    audio?.pause()
+  }, [])
+
+  // 实时转文字：每 4 秒抓一段 PCM 交给本地 ASR，结果像歌词一样追加
+  const toggleTranscript = useCallback(async (on: boolean) => {
+    if (!on) { stopPcmCapture(); setTranscriptActive(false); return }
+    const st = await window.eApi.asrStatus().catch(() => ({ ready: false }))
+    if (!st?.ready) { setMessage('请先在设置中下载语音转文字模型'); return }
+    const ok = ensureGraph(audio)
+    if (!ok) { setMessage('音频初始化失败，无法开启转写'); return }
+    setTranscriptActive(true)
+    startPcmCapture(4, async (pcm) => {
+      try {
+        const arr = Array.from(pcm)
+        const text = await window.eApi.asrRecognize(arr)
+        if (typeof text === 'string' && text.trim()) {
+          setTranscripts((prev) => [
+            ...prev.slice(-40),
+            { id: Date.now(), text: text.trim(), time: Date.now() }
+          ])
+        }
+      } catch { /* 单段识别失败不中断 */ }
+    })
+    setMessage('实时转文字已开启')
+  }, [setMessage])
 
   // 电台列表：优先走聚合接口（分页遍历+缓存，一次拿到全部分类电台）；失败降级单接口
   const loadRadios = useCallback(async () => {
@@ -1608,7 +1741,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     radios, radiosLoading, loadRadios, loadRadioPrograms, activeRadio, setActiveRadio,
     radioCats, activeCat, setActiveCat, loadRadioCats,
     aggCats,
-    localTracks, localLoading, scanLocal, openLocalFiles
+    localTracks, localLoading, scanLocal, openLocalFiles,
+    radioStations, netRadioLoading, radioQuery, setRadioQuery, loadRadioStations,
+    radioCountries, radioTags, currentStation, playRadioStation, stopRadio,
+    transcripts, transcriptActive, setTranscriptActive: toggleTranscript
   }
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
