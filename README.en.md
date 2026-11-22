@@ -6,18 +6,18 @@ A third-party NetEase Cloud Music desktop client built with **Electron + React +
 
 ## Download
 
-Windows and Linux builds are published in the **same release page** — pick the one for your system: [v2.2.0 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.2.0).
+Windows and Linux builds are published in the **same release page** — pick the one for your system: [v2.2.1 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.2.1).
 
 **Windows 10 / 11 x64**
-- **yiyunmusic-Setup-2.2.0.exe** — installer (custom directory, desktop shortcut)
-- **yiyunmusic-portable-2.2.0.exe** — portable, no installation required
+- **yiyunmusic-Setup-2.2.1.exe** — installer (custom directory, desktop shortcut)
+- **yiyunmusic-portable-2.2.1.exe** — portable, no installation required
 
 **Linux x64**
-- **yiyunmusic-2.2.0-x86_64.AppImage** — universal (Arch / Ubuntu), `chmod +x` then run
-- **yiyunmusic-2.2.0-amd64.deb** — Ubuntu / Debian, `sudo apt install ./yiyunmusic-2.2.0-amd64.deb`
-- **yiyunmusic-2.2.0-x64.tar.gz** — portable tarball, extract and run `./yiyunmusic`
+- **yiyunmusic-2.2.1-x86_64.AppImage** — universal (Arch / Ubuntu), `chmod +x` then run
+- **yiyunmusic-2.2.1-amd64.deb** — Ubuntu / Debian, `sudo apt install ./yiyunmusic-2.2.1-amd64.deb`
+- **yiyunmusic-2.2.1-x64.tar.gz** — portable tarball, extract and run `./yiyunmusic`
 
-> Since v2.2.0 the login cookie is encrypted at rest instead of being stored as plain text in the config file.
+> Since v2.2.1 the login cookie is encrypted at rest instead of being stored as plain text in the config file.
 
 ## Code signing
 
@@ -81,6 +81,10 @@ npm run build      # build main / preload / renderer
 npm run dist       # package NSIS installer + portable exe into dist-release/
 ```
 
-## Disclaimer
+## About
 
-This project is for personal learning and research only. Please respect music copyright and support the official service. Do not use it for commercial purposes or large-scale redistribution.
+yiyunmusic is an independently developed music player. You sign in with your own NetEase Cloud Music account, and your playlists, favorites and history stay in sync.
+
+- Music, artwork and lyrics belong to their respective owners. This project stores and distributes no audio files; it only plays and displays content on your machine.
+- If you enjoy something, the best way to support it is through the official service.
+- License: **PolyForm Noncommercial 1.0.0** — personal, study and research use are welcome; for commercial use, please contact the author for permission. See [LICENSE](LICENSE).
