@@ -46,9 +46,11 @@ const api = {
 
   // 本地语音转文本
   asrStatus: () => ipcRenderer.invoke('asr:status'),
-  asrDownload: () => ipcRenderer.invoke('asr:download'),
-  asrMarkWanted: () => ipcRenderer.invoke('asr:mark-wanted'),
-  asrDelete: () => ipcRenderer.invoke('asr:delete'),
+  asrModels: () => ipcRenderer.invoke('asr:models'),
+  asrSetModel: (id: string) => ipcRenderer.invoke('asr:set-model', id),
+  asrDownload: (id?: string) => ipcRenderer.invoke('asr:download', id),
+  asrMarkWanted: (id?: string) => ipcRenderer.invoke('asr:mark-wanted', id),
+  asrDelete: (id?: string) => ipcRenderer.invoke('asr:delete', id),
   asrRecognize: (samples: number[]) => ipcRenderer.invoke('asr:recognize', samples),
   onAsrProgress: (cb: (p: { phase: string; pct: number }) => void) => {
     const handler = (_e: any, p: { phase: string; pct: number }) => cb(p)
