@@ -25,7 +25,7 @@ const api = {
   // 多级兜底搜索（云搜索 → 旧搜索 → 建议词）
   smartSearch: (keyword: string) => ipcRenderer.invoke('search:smart', keyword),
   // 音频流代理（供 Web Audio 频谱分析与均衡器使用）
-  audioRegister: (url: string) => ipcRenderer.invoke('audio:register', url),
+  audioRegister: (url: string, radio?: boolean) => ipcRenderer.invoke('audio:register', url, !!radio),
   audioRegisterLocal: (filePath: string) => ipcRenderer.invoke('audio:register-local', filePath),
 
   // 图片代理兜底（封面加载失败时用）
@@ -45,6 +45,7 @@ const api = {
   // 本地语音转文本
   asrStatus: () => ipcRenderer.invoke('asr:status'),
   asrDownload: () => ipcRenderer.invoke('asr:download'),
+  asrMarkWanted: () => ipcRenderer.invoke('asr:mark-wanted'),
   asrDelete: () => ipcRenderer.invoke('asr:delete'),
   asrRecognize: (samples: number[]) => ipcRenderer.invoke('asr:recognize', samples),
   onAsrProgress: (cb: (p: { phase: string; pct: number }) => void) => {
