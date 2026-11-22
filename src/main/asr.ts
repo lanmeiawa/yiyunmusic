@@ -11,8 +11,14 @@ import { app, ipcMain } from 'electron'
 const MODEL_DIR = () => path.join(app.getPath('userData'), 'asr-model')
 const MODEL_FILE = () => path.join(MODEL_DIR(), 'model.int8.onnx')
 const TOKENS_FILE = () => path.join(MODEL_DIR(), 'tokens.txt')
-const BASE = 'https://hf-mirror.com/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/main'
+// 多镜像：优先国内 hf-mirror，失败回退官方 huggingface / gitee
+const BASES = [
+  'https://hf-mirror.com/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/main',
+  'https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/main'
+]
 const MODEL_SIZE = 228 * 1024 * 1024 // 仅用于进度估算
+/** 安装时询问后写入的标记：首次启动自动下载模型 */
+const WANT_FILE = () => path.join(MODEL_DIR(), 'wanted')
 
 export function modelStatus(): { ready: boolean; size: number; path: string } {
   try {
@@ -21,43 +27,78 @@ export function modelStatus(): { ready: boolean; size: number; path: string } {
   } catch { return { ready: false, size: 0, path: MODEL_DIR() } }
 }
 
-/** 下载单个文件，带进度（0-1） */
-async function downloadFile(url: string, dest: string, onProgress?: (pct: number) => void): Promise<void> {
-  const res = await fetch(url, { signal: AbortSignal.timeout(0) as any })
-  if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
-  const total = Number(res.headers.get('content-length')) || MODEL_SIZE
+/** 下载单个文件：多镜像回退 + 断点续传 + 进度。fileName 用于拼镜像路径 */
+async function downloadFile(fileName: string, dest: string, onProgress?: (pct: number) => void): Promise<void> {
   fs.mkdirSync(path.dirname(dest), { recursive: true })
   const tmp = dest + '.part'
-  const out = fs.createWriteStream(tmp)
-  let received = 0
-  const reader = res.body.getReader()
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) break
-    if (value) {
-      out.write(Buffer.from(value))
-      received += value.length
-      onProgress?.(Math.min(1, received / total))
+  let lastErr: any
+  for (const base of BASES) {
+    try {
+      // 断点续传：已有 .part 则从已下载字节处继续
+      const existing = fs.existsSync(tmp) ? fs.statSync(tmp).size : 0
+      const headers: Record<string, string> = existing > 0 ? { Range: `bytes=${existing}-` } : {}
+      const res = await fetch(`${base}/${fileName}`, { headers })
+      // 206=从断点继续；200=服务器忽略 Range（需从头写）
+      if (!res.ok && res.status !== 206) throw new Error(`HTTP ${res.status}`)
+      const append = res.status === 206 && existing > 0
+      const total = (Number(res.headers.get('content-length')) || 0) + (append ? existing : 0) || MODEL_SIZE
+      let received = append ? existing : 0
+      const out = fs.createWriteStream(tmp, { flags: append ? 'a' : 'w' })
+      if (!res.body) { out.close(); throw new Error('无响应体') }
+      const reader = res.body.getReader()
+      for (;;) {
+        const { done, value } = await reader.read()
+        if (done) break
+        if (value) {
+          if (!out.write(Buffer.from(value))) {
+            await new Promise<void>((r) => out.once('drain', r))
+          }
+          received += value.length
+          onProgress?.(Math.min(1, received / total))
+        }
+      }
+      await new Promise<void>((resolve, reject) => { out.end(() => resolve()); out.on('error', reject) })
+      if (received < 1000) throw new Error('下载内容过小')
+      fs.renameSync(tmp, dest)
+      return
+    } catch (e: any) {
+      lastErr = e
+      console.warn(`[asr] 镜像 ${base} 下载 ${fileName} 失败:`, e?.message || e)
+      // 换下一个镜像时保留 .part（可能可续传），继续尝试
     }
   }
-  await new Promise<void>((resolve, reject) => { out.end(() => resolve()); out.on('error', reject) })
-  fs.renameSync(tmp, dest)
+  throw lastErr || new Error('所有镜像均下载失败')
 }
 
 /** 下载模型（模型 + 词表），进度推送到渲染层 */
 export async function downloadModel(win?: Electron.BrowserWindow): Promise<{ ok: boolean; error?: string }> {
+  const send = (phase: string, pct: number) => {
+    win && !win.isDestroyed() && win.webContents.send('asr:progress', { phase, pct })
+  }
   try {
-    await downloadFile(`${BASE}/model.int8.onnx`, MODEL_FILE(), (pct) => {
-      win && !win.isDestroyed() && win.webContents.send('asr:progress', { phase: 'model', pct })
-    })
-    await downloadFile(`${BASE}/tokens.txt`, TOKENS_FILE(), (pct) => {
-      win && !win.isDestroyed() && win.webContents.send('asr:progress', { phase: 'tokens', pct })
-    })
+    await downloadFile('tokens.txt', TOKENS_FILE(), (pct) => send('tokens', pct))
+    await downloadFile('model.int8.onnx', MODEL_FILE(), (pct) => send('model', pct))
+    // 下载成功后清除"想下载"标记
+    try { if (fs.existsSync(WANT_FILE())) fs.unlinkSync(WANT_FILE()) } catch {}
     return { ok: true }
   } catch (e: any) {
-    try { if (fs.existsSync(MODEL_FILE() + '.part')) fs.unlinkSync(MODEL_FILE() + '.part') } catch {}
     return { ok: false, error: e?.message || String(e) }
   }
+}
+
+/** 安装时询问后写入标记；应用启动检测到此标记会自动下载模型 */
+export function markModelWanted(): void {
+  try {
+    fs.mkdirSync(MODEL_DIR(), { recursive: true })
+    fs.writeFileSync(WANT_FILE(), String(Date.now()), 'utf-8')
+  } catch {}
+}
+export function consumeModelWanted(): boolean {
+  try {
+    if (!fs.existsSync(WANT_FILE())) return false
+    fs.unlinkSync(WANT_FILE())
+    return true
+  } catch { return false }
 }
 
 export function deleteModel(): boolean {
@@ -101,6 +142,7 @@ export function recognize(pcm: Float32Array): string {
 export function registerAsrIpc(winRef: () => Electron.BrowserWindow | null) {
   ipcMain.handle('asr:status', () => modelStatus())
   ipcMain.handle('asr:download', async () => downloadModel(winRef() || undefined))
+  ipcMain.handle('asr:mark-wanted', () => markModelWanted())
   ipcMain.handle('asr:delete', () => deleteModel())
   ipcMain.handle('asr:recognize', async (_e, samples: number[]) => {
     try { return recognize(new Float32Array(samples || [])) } catch (e: any) { return { error: e?.message || String(e) } }
