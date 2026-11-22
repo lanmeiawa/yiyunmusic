@@ -1160,7 +1160,9 @@
 .search-retry:hover { background: var(--primary-soft); }
 
 /* ==================== 在线收音机 ==================== */
-.online-radio-view { padding: 4px 4px 30px; }
+.online-radio-view { padding: 10px 20px 30px; }
+/* 标题栏与下方标签、网格对齐（原来的 34px 会让标题比内容更靠右） */
+.online-radio-view .radio-header { padding: 14px 0 16px; }
 .or-tabs { display: flex; gap: 8px; margin: 18px 0 14px; flex-wrap: wrap; }
 .or-tab {
   height: 32px; padding: 0 16px; border-radius: 16px; border: 1px solid var(--border);
