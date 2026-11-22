@@ -1,6 +1,6 @@
 {
   "name": "yiyunmusic",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "private": true,
   "description": "把动态歌词做到极致的网易云音乐第三方桌面客户端",
   "homepage": "https://github.com/lanmeiawa/yiyunmusic",
@@ -49,13 +49,6 @@
       {
         "from": "build/icon.png",
         "to": "icon.png"
-      },
-      {
-        "from": "build/asr-model",
-        "to": "asr-model",
-        "filter": [
-          "**/*"
-        ]
       }
     ],
     "asarUnpack": [
