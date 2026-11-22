@@ -1015,10 +1015,11 @@ app.whenReady().then(() => {
   // 安装时用户选择了下载语音模型 → 首次启动自动从镜像下载（多镜像 + 断点续传）
   try {
     const asr = require('./asr')
-    if (asr.consumeModelWanted() && !asr.modelStatus().ready) {
+    const wanted = asr.consumeModelWanted()
+    if (wanted && !asr.modelStatus().ready) {
       setTimeout(() => {
-        asr.downloadModel(mainWindow).then((r: any) => {
-          if (r?.ok) mainWindow?.webContents.send('asr:progress', { phase: 'done', pct: 1 })
+        asr.downloadModel(mainWindow, wanted).then((r: any) => {
+          if (r?.ok) mainWindow?.webContents.send('asr:progress', { modelId: r.modelId, phase: 'done', pct: 1 })
         }).catch(() => {})
       }, 3000) // 延后 3 秒，避免与启动争抢资源
     }
