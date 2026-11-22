@@ -187,3 +187,18 @@ export function formatTime(sec: number): string {
   const s = Math.floor(sec % 60)
   return `${m}:${s.toString().padStart(2, '0')}`
 }
+
+/**
+ * 判断当前时间是否处在「一句已唱完、下一句还没到」的间奏里。
+ * 有逐字时间轴用真实结束时间；普通 LRC 没有结束时间，按字数估算（约 0.3s/字）。
+ * 只有空档大于 2.2 秒才算间奏，避免正常换句时高亮闪烁。
+ */
+export function isLyricGap(line: LyricLine | undefined, next: LyricLine | undefined, time: number): boolean {
+  if (!line) return false
+  const estEnd = line.words?.length && line.end
+    ? line.end
+    : line.time + Math.min(9, Math.max(1.6, (line.text?.length || 0) * 0.3))
+  if (time <= estEnd + 0.7) return false
+  const gap = next ? next.time - estEnd : Number.POSITIVE_INFINITY
+  return gap > 2.2
+}
