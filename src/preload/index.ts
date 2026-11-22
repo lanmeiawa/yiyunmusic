@@ -41,6 +41,8 @@ const api = {
   radioStations: (q?: Record<string, any>) => ipcRenderer.invoke('radio:stations', q || {}),
   radioFacets: (kind: 'countries' | 'tags') => ipcRenderer.invoke('radio:facets', kind),
   radioClick: (uuid: string) => ipcRenderer.invoke('radio:click', uuid),
+  radioProbe: (url: string) => ipcRenderer.invoke('radio:probe', url),
+  radioHlsUrl: (url: string) => ipcRenderer.invoke('radio:hls-url', url),
 
   // 本地语音转文本
   asrStatus: () => ipcRenderer.invoke('asr:status'),
