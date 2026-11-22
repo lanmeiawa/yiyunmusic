@@ -81,10 +81,12 @@ npm run build      # build main / preload / renderer
 npm run dist       # package NSIS installer + portable exe into dist-release/
 ```
 
-## About
+## Respect Copyright
 
 yiyunmusic is an independently developed music player. You sign in with your own NetEase Cloud Music account, and your playlists, favorites and history stay in sync.
 
-- Music, artwork and lyrics belong to their respective owners. This project stores and distributes no audio files; it only plays and displays content on your machine.
-- If you enjoy something, the best way to support it is through the official service.
-- License: **PolyForm Noncommercial 1.0.0** — personal, study and research use are welcome; for commercial use, please contact the author for permission. See [LICENSE](LICENSE) (Chinese summary: [docs/LICENSE.zh.md](docs/LICENSE.zh.md)).
+- This project **does not provide, store or distribute** any music files; it plays content available to your own account on the official platform.
+- Music, artwork and lyrics belong to their respective owners. If you enjoy something, please **listen, purchase or subscribe on the official platform** — that is the best way to support the creators.
+- Rights holders: if anything here seems inappropriate, please open an issue and we will address it promptly.
+
+**License**: [PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0) — personal, study and research use are welcome; for commercial use, please contact the author for permission. The [LICENSE](LICENSE) file is the official text; a [Chinese summary](docs/LICENSE.zh.md) is also provided.
