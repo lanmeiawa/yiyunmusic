@@ -60,9 +60,9 @@ function commonHeaders(res: http.ServerResponse) {
 
 async function serveRemote(req: http.IncomingMessage, res: http.ServerResponse, target: string, radio = false) {
   // 电台流不能带网易云的 Referer——很多网络电台会因此判定盗链并拒绝（403/拦截）
+  // 也不能请求 Icy-MetaData：一旦开启，上游会在音频字节中插入元数据块，<audio> 会直接解不出来
   const headers: Record<string, string> = { 'User-Agent': UA }
   if (!radio) headers.Referer = 'https://music.163.com'
-  else headers['Icy-MetaData'] = '1' // 电台常要求 ICY 头，返回流信息
   if (req.headers.range) headers.Range = String(req.headers.range)
   const ctrl = new AbortController()
   const close = () => ctrl.abort()
@@ -73,7 +73,7 @@ async function serveRemote(req: http.IncomingMessage, res: http.ServerResponse, 
     const status = upstream.status === 206 ? 206 : 200
     res.statusCode = status
     const ct = upstream.headers.get('content-type')
-    res.setHeader('Content-Type', ct && /^audio\//.test(ct) ? ct : 'audio/mpeg')
+    res.setHeader('Content-Type', ct && /^audio\/|^video\/|^application\/ogg|^application\/x-mpegurl|^application\/vnd\.apple/i.test(ct) ? ct : 'audio/mpeg')
     const len = upstream.headers.get('content-length')
     if (len) res.setHeader('Content-Length', len)
     const cr = upstream.headers.get('content-range')
@@ -89,6 +89,163 @@ async function serveRemote(req: http.IncomingMessage, res: http.ServerResponse, 
     }
   } finally {
     res.off('close', close)
+  }
+}
+
+/* ==================== HLS 代理 ==================== */
+/**
+ * 浏览器内核不能直接播放 HLS（m3u8），且跨域会让 hls.js 拿不到分片。
+ * 这里把播放列表下载下来，把里面所有 URI 改写成走本地代理，从而：
+ *   1) 播放列表与分片全部同源（CORS 不再是问题）
+ *   2) 嵌套播放列表（master -> media）同样被代理
+ */
+
+function b64urlEncode(s: string): string {
+  return Buffer.from(s, 'utf8').toString('base64url')
+}
+function b64urlDecode(s: string): string {
+  try { return Buffer.from(s, 'base64url').toString('utf8') } catch { return '' }
+}
+
+/** 把一个远程 HLS 地址包装成本地代理地址（服务未启动时返回空串） */
+export function hlsProxyUrl(url: string): string {
+  if (!server || !/^https?:\/\//i.test(url || '')) return ''
+  return `http://127.0.0.1:${port}/hls?u=${b64urlEncode(url)}`
+}
+
+function rewritePlaylist(text: string, baseUrl: string): string {
+  const abs = (u: string) => {
+    try { return new URL(u, baseUrl).toString() } catch { return u }
+  }
+  const wrap = (u: string) => `/hls?u=${b64urlEncode(abs(u))}`
+  return text
+    .split(/\r?\n/)
+    .map((line) => {
+      const trimmed = line.trim()
+      if (!trimmed) return line
+      if (trimmed.startsWith('#')) {
+        // #EXT-X-KEY:URI="..." / #EXT-X-MAP:URI="..." 等属性里的地址也要走代理
+        return line.replace(/URI="([^"]+)"/g, (_m, u) => `URI="${wrap(u)}"`)
+      }
+      return wrap(trimmed)
+    })
+    .join('\n')
+}
+
+async function serveHls(req: http.IncomingMessage, res: http.ServerResponse, target: string) {
+  if (!/^https?:\/\//i.test(target)) { res.statusCode = 400; res.end('bad target'); return }
+  const headers: Record<string, string> = { 'User-Agent': UA }
+  if (req.headers.range) headers.Range = String(req.headers.range)
+  const ctrl = new AbortController()
+  const close = () => ctrl.abort()
+  res.on('close', close)
+  try {
+    const upstream = await fetch(target, { headers, redirect: 'follow', signal: ctrl.signal })
+    const ct = (upstream.headers.get('content-type') || '').toLowerCase()
+    const looksM3u8 = /mpegurl|m3u8/.test(ct) || /\.m3u8(\?|$)/i.test(target)
+    if (looksM3u8 && !req.headers.range) {
+      const text = await upstream.text()
+      if (!text.trimStart().startsWith('#EXTM3U')) {
+        // 名义上是 m3u8，实际返回了别的（多为错误页）：原样返回，交给播放器报错
+        res.statusCode = upstream.status === 200 ? 200 : upstream.status
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+        res.end(text)
+        return
+      }
+      const base = upstream.url || target
+      res.statusCode = 200
+      res.setHeader('Content-Type', 'application/vnd.apple.mpegurl')
+      res.end(rewritePlaylist(text, base))
+      return
+    }
+    // 分片 / 密钥 / 非 HLS：直接透传
+    const status = upstream.status === 206 ? 206 : 200
+    res.statusCode = status
+    res.setHeader('Content-Type', ct && /^audio\/|^video\/|^application\/(octet-stream|ogg|mp4)|^binary/.test(ct) ? ct : 'application/octet-stream')
+    const len = upstream.headers.get('content-length')
+    if (len) res.setHeader('Content-Length', len)
+    const cr = upstream.headers.get('content-range')
+    if (cr) res.setHeader('Content-Range', cr)
+    if (!upstream.body) { res.end(); return }
+    Readable.fromWeb(upstream.body as any).pipe(res)
+  } catch {
+    if (!res.headersSent) { res.statusCode = 502; res.end('hls proxy failed') } else res.end()
+  } finally {
+    res.off('close', close)
+  }
+}
+
+/* ==================== 流探测 ==================== */
+export type StreamProbe = {
+  kind: 'hls' | 'audio' | 'dead'
+  url: string
+  contentType?: string
+  status?: number
+  error?: string
+}
+
+/** 解析 .pls / .m3u 播放列表文本，取出第一个可用地址 */
+function parsePlaylist(text: string, base: string): string {
+  const lines = text.split(/\r?\n/).map((l) => l.trim())
+  const isPls = /\[playlist\]/i.test(text)
+  if (isPls) {
+    for (const l of lines) {
+      const m = /^File\d*\s*=\s*(.+)$/i.exec(l)
+      if (m) { try { return new URL(m[1], base).toString() } catch { return m[1] } }
+    }
+    return ''
+  }
+  for (const l of lines) {
+    if (!l || l.startsWith('#')) continue
+    try { return new URL(l, base).toString() } catch { return l }
+  }
+  return ''
+}
+
+/**
+ * 探测一个电台地址到底是什么：
+ * - hls：返回 m3u8 播放列表
+ * - audio：可直接喂给 <audio> 的音频流（含从 .pls/.m3u 里解析出的真实地址）
+ * - dead：连不上 / 明确错误
+ */
+export async function probeStream(url: string, depth = 0): Promise<StreamProbe> {
+  if (!/^https?:\/\//i.test(url || '')) return { kind: 'dead', url, error: '无效地址' }
+  if (/\.m3u8(\?|$)/i.test(url)) return { kind: 'hls', url }
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), 9000)
+  try {
+    const r = await fetch(url, {
+      headers: { 'User-Agent': UA, Range: 'bytes=0-4095' },
+      redirect: 'follow',
+      signal: ctrl.signal
+    })
+    const ct = (r.headers.get('content-type') || '').toLowerCase()
+    if (!r.ok && r.status !== 206) return { kind: 'dead', url, status: r.status, contentType: ct }
+    // 分片/音频直接判定
+    if (/^audio\/|^video\//.test(ct) || /octet-stream/.test(ct)) {
+      // 有些服务器对音频返回 text/plain，这里再看一眼内容
+      return { kind: 'audio', url, status: r.status, contentType: ct }
+    }
+    let head = ''
+    if (r.body) {
+      const reader = r.body.getReader()
+      const { value } = await reader.read()
+      head = value ? Buffer.from(value).toString('utf8') : ''
+      try { await reader.cancel() } catch {}
+    }
+    if (head.includes('#EXTM3U')) return { kind: 'hls', url, status: r.status, contentType: ct }
+    if (/mpegurl|m3u8/.test(ct)) return { kind: 'hls', url, status: r.status, contentType: ct }
+    if (/\[playlist\]|#EXTINF/i.test(head) || /\.(pls|m3u)(\?|$)/i.test(url)) {
+      const inner = parsePlaylist(head, r.url || url)
+      if (inner && inner !== url && depth < 2) return probeStream(inner, depth + 1)
+      return { kind: 'dead', url, error: '播放列表无法解析' }
+    }
+    if (/^audio\/|^application\/ogg/.test(ct)) return { kind: 'audio', url, status: r.status, contentType: ct }
+    return { kind: 'dead', url, status: r.status, contentType: ct, error: '不支持的流类型' }
+  } catch (e: any) {
+    return { kind: 'dead', url, error: e?.name === 'AbortError' ? '连接超时' : (e?.message || String(e)) }
+  } finally {
+    clearTimeout(timer)
   }
 }
 
@@ -125,6 +282,13 @@ export function startAudioProxy(): void {
   server = http.createServer((req, res) => {
     commonHeaders(res)
     if (req.method === 'OPTIONS') { res.statusCode = 204; res.end(); return }
+    const reqUrl = new URL(req.url || '/', 'http://127.0.0.1')
+    if (reqUrl.pathname === '/hls') {
+      const target = b64urlDecode(reqUrl.searchParams.get('u') || '')
+      if (!target) { res.statusCode = 400; res.end('missing u'); return }
+      void serveHls(req, res, target)
+      return
+    }
     const m = /^\/a\/([A-Za-z0-9]+)$/.exec(req.url || '')
     const src = m ? sources.get(m[1]) : null
     if (!src) { res.statusCode = 404; res.end('unknown token'); return }
