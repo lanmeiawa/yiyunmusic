@@ -757,8 +757,15 @@ html[data-layout="magazine"] .sidebar .side-group {
 }
 html[data-layout="magazine"] .sidebar .side-section-title,
 html[data-layout="magazine"] .sidebar .playlist-scroll,
-html[data-layout="magazine"] .sidebar .side-footer,
 html[data-layout="magazine"] .sidebar .side-count { display: none !important; }
+/* 设置入口必须保留：把 footer 摊平成横向导航的一部分，而不是整个隐藏 */
+html[data-layout="magazine"] .sidebar .side-footer {
+  display: flex; flex-direction: row; align-items: center;
+  gap: 6px; padding: 0; margin-left: auto; flex-shrink: 0;
+  background: transparent; border: none;
+}
+html[data-layout="magazine"] .sidebar .side-footer .side-user,
+html[data-layout="magazine"] .sidebar .side-footer .account-menu { display: none !important; }
 html[data-layout="magazine"] .sidebar .side-nav {
   flex-direction: row; gap: 6px; align-items: center; flex-shrink: 0;
 }
