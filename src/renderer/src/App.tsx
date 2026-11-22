@@ -11,6 +11,7 @@ import SettingsView from './components/SettingsView'
 import RadioView from './components/RadioView'
 import ProfileView from './components/ProfileView'
 import LocalView from './components/LocalView'
+import OnlineRadioView from './components/OnlineRadioView'
 import PlayerBar from './components/PlayerBar'
 import LoginModal from './components/LoginModal'
 import DisclaimerModal from './components/DisclaimerModal'
@@ -42,7 +43,7 @@ function Main() {
   // 背景应用范围：bgAll 开启时，任意主题（mitia/light/dark）都显示用户背景
 
   return (
-    <div className={`app-root ${immersive ? 'immersive-full' : ''}`} style={isMitia ? mitiaVars : undefined}>
+    <div className={`app-root layout-${customization.layout || 'classic'} ${immersive ? 'immersive-full' : ''}`} style={isMitia ? mitiaVars : undefined}>
       {/* 全屏壁纸背景层：mitia 用内置壁纸，custom 用用户上传的背景图 */}
       {(isMitia || isCustom || (customization.bgAll && !!bgData)) && (
         <div
@@ -75,6 +76,7 @@ function Main() {
           {view === 'radio' && <RadioView />}
           {view === 'profile' && <ProfileView />}
           {view === 'local' && <LocalView />}
+          {view === 'onlineRadio' && <OnlineRadioView />}
         </main>
       </div>
       <PlayerBar />
