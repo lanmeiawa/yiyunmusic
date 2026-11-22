@@ -11,7 +11,7 @@ import { Readable } from 'node:stream'
  * 同时支持 Range 请求（拖动进度条）与 CORS 响应头。音频始终以流方式转发，不落盘、不缓存整首歌。
  */
 
-type Source = { target: string; local: boolean; time: number }
+type Source = { target: string; local: boolean; time: number; radio?: boolean }
 const sources = new Map<string, Source>()
 let server: http.Server | null = null
 let port = 0
@@ -32,12 +32,12 @@ function cleanup() {
 }
 
 /** 注册远程音源，返回本地代理 URL；失败返回空串（调用方降级直连） */
-export async function registerAudioUrl(url: string): Promise<string> {
+export async function registerAudioUrl(url: string, radio = false): Promise<string> {
   if (!/^https?:\/\//i.test(url || '')) return ''
   if (!server) return ''
   cleanup()
   const t = token()
-  sources.set(t, { target: url, local: false, time: Date.now() })
+  sources.set(t, { target: url, local: false, time: Date.now(), radio })
   return `http://127.0.0.1:${port}/a/${t}`
 }
 
@@ -58,8 +58,11 @@ function commonHeaders(res: http.ServerResponse) {
   res.setHeader('Accept-Ranges', 'bytes')
 }
 
-async function serveRemote(req: http.IncomingMessage, res: http.ServerResponse, target: string) {
-  const headers: Record<string, string> = { 'User-Agent': UA, 'Referer': 'https://music.163.com' }
+async function serveRemote(req: http.IncomingMessage, res: http.ServerResponse, target: string, radio = false) {
+  // 电台流不能带网易云的 Referer——很多网络电台会因此判定盗链并拒绝（403/拦截）
+  const headers: Record<string, string> = { 'User-Agent': UA }
+  if (!radio) headers.Referer = 'https://music.163.com'
+  else headers['Icy-MetaData'] = '1' // 电台常要求 ICY 头，返回流信息
   if (req.headers.range) headers.Range = String(req.headers.range)
   const ctrl = new AbortController()
   const close = () => ctrl.abort()
@@ -126,7 +129,7 @@ export function startAudioProxy(): void {
     const src = m ? sources.get(m[1]) : null
     if (!src) { res.statusCode = 404; res.end('unknown token'); return }
     if (src.local) serveLocal(req, res, src.target)
-    else void serveRemote(req, res, src.target)
+    else void serveRemote(req, res, src.target, !!src.radio)
   })
   server.on('clientError', (_e, socket) => socket.destroy())
   server.listen(0, '127.0.0.1', () => {
