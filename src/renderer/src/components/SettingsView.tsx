@@ -79,7 +79,11 @@ export default function SettingsView() {
   useEffect(() => {
     refreshAsr()
     return window.eApi.onAsrProgress((p) => {
-      if (p.phase !== 'done') {
+      if (p.phase === 'done') {
+        // 后台下载完成（例如安装后首次启动自动下载）→ 刷新列表
+        setAsrBusyId('')
+        refreshAsr()
+      } else {
         setAsrBusyId((p as any).modelId || '')
         setAsrPct(p.pct)
       }
