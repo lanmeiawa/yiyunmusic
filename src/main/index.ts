@@ -19,7 +19,8 @@ import {
   getSongQualities,
   clearQualityCache,
   smartSearch,
-  switchAccount
+  switchAccount,
+  fetchFmBatch
 } from './api'
 import { startAudioProxy, stopAudioProxy, registerAudioUrl, registerLocalAudio, hlsProxyUrl, probeStream } from './audio-proxy'
 import { registerAsrIpc } from './asr'
@@ -580,6 +581,25 @@ function setupIpc() {
   // 通用接口调用
   ipcMain.handle('api:call', async (_e, name, params) => {
     return callApi(name, params)
+  })
+
+  // 私人 FM：一次凑够 N 首（接口每次只给 3 首）
+  ipcMain.handle('fm:batch', async (_e, limit?: number) => {
+    try {
+      return await fetchFmBatch(Number(limit) || 50)
+    } catch (e: any) {
+      return { error: e?.message || String(e) }
+    }
+  })
+
+  // 开机自启（Windows/macOS 登录项）
+  ipcMain.handle('app:auto-launch', (_e, on: boolean) => {
+    try {
+      const opts = { path: process.execPath, args: process.defaultApp && process.argv[1] ? [process.argv[1]] : [] }
+      app.setLoginItemSettings({ openAtLogin: !!on, ...opts })
+      // Windows 需要带同样的 path/args 查询，否则匹配不到刚写入的启动项
+      return app.getLoginItemSettings(opts).openAtLogin
+    } catch (e: any) { console.error('[auto-launch]', e?.message || e); return false }
   })
 
   // 扫码登录三步
