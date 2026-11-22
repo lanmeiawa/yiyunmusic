@@ -12,7 +12,7 @@ interface RecItem { id: number; name: string; artist: string; pic: string; score
  * 一页直达（无多级跳转）· 听歌排行置顶 · 最近播放可直接回放 · 无动态/社交杂讯
  */
 export default function ProfileView() {
-  const { profile, playlists, openPlaylist, openLogin, playTrack, setMessage } = useApp()
+  const { profile, playlists, loadPlaylists, openPlaylist, openLogin, playTrack, setMessage } = useApp()
   const [detail, setDetail] = useState<any>(null)
   const [level, setLevel] = useState<number>(0)
   const [vip, setVip] = useState<{ isVip: boolean; type: string } | null>(null)
@@ -57,6 +57,13 @@ export default function ProfileView() {
   }
 
   useEffect(() => { if (profile?.userId) loadRecords(true) }, [profile?.userId])
+
+  // 进入个人中心时主动加载歌单：避免只依赖登录时的加载，
+  // 若当时接口慢/失败或用户新登录，这里兜底重拉，保证「我的歌单」不空白。
+  useEffect(() => {
+    if (profile?.userId) loadPlaylists()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.userId])
 
   if (!profile) {
     return (
