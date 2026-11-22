@@ -94,20 +94,20 @@
 
 ## 下载
 
-Windows 和 Linux 现在放在**同一个发布页**，进去按系统挑就行：[v2.2.3 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.2.3)。
+Windows 和 Linux 现在放在**同一个发布页**，进去按系统挑就行：[v2.2.4 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.2.4)。
 
 ### Windows（10 / 11 x64）
 
-- **yiyunmusic-Setup-2.2.3.exe** —— 安装版（可自定义安装目录、自动创建快捷方式）
-- **yiyunmusic-portable-2.2.3.exe** —— 便携版，免安装，双击即用
+- **yiyunmusic-Setup-2.2.4.exe** —— 安装版（可自定义安装目录、自动创建快捷方式）
+- **yiyunmusic-portable-2.2.4.exe** —— 便携版，免安装，双击即用
 
 > 安装新版时会自动迁移旧版的登录态与个性化设置，无需重新扫码登录。登录凭证（Cookie）已加密存储，不再明文落盘。
 
 ### Linux（x64）
 
-- **yiyunmusic-2.2.3-x86_64.AppImage** —— Arch / 通用，`chmod +x` 后双击即可运行
-- **yiyunmusic-2.2.3-amd64.deb** —— Ubuntu / Debian，`sudo apt install ./yiyunmusic-2.2.3-amd64.deb`
-- **yiyunmusic-2.2.3-x64.tar.gz** —— 通用便携版，解压后运行 `./yiyunmusic`
+- **yiyunmusic-2.2.4-x86_64.AppImage** —— Arch / 通用，`chmod +x` 后双击即可运行
+- **yiyunmusic-2.2.4-amd64.deb** —— Ubuntu / Debian，`sudo apt install ./yiyunmusic-2.2.4-amd64.deb`
+- **yiyunmusic-2.2.4-x64.tar.gz** —— 通用便携版，解压后运行 `./yiyunmusic`
 
 ## 使用方法
 
