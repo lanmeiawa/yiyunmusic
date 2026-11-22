@@ -86,6 +86,32 @@ export type RadioQuery = {
   offset?: number
 }
 
+/** 国家名 → ISO 代码（渲染层传的是「中国」这类名称，接口只认 CN） */
+let countryMap: Record<string, string> | null = null
+async function getCountryMap(): Promise<Record<string, string>> {
+  if (countryMap) return countryMap
+  try {
+    const list = await request('/json/countries') as any[]
+    const map: Record<string, string> = {}
+    for (const c of Array.isArray(list) ? list : []) {
+      const name = String(c?.name || '').trim().toLowerCase()
+      const code = String(c?.iso_3166_1 || '').trim().toUpperCase()
+      if (name && /^[A-Z]{2}$/.test(code)) map[name] = code
+    }
+    countryMap = map
+  } catch { countryMap = {} }
+  return countryMap
+}
+
+/** 把「中国 / CN / cn」统一成两位国家代码 */
+async function normalizeCountryCode(raw?: string): Promise<string> {
+  const v = String(raw || '').trim()
+  if (/^[A-Za-z]{2}$/.test(v)) return v.toUpperCase()
+  if (!v) return 'CN'
+  const map = await getCountryMap()
+  return map[v.toLowerCase()] || 'CN'
+}
+
 /** 搜索 / 浏览电台 */
 export async function fetchStations(q: RadioQuery = {}): Promise<any[]> {
   const limit = Math.max(1, Math.min(120, q.limit || 40))
@@ -96,9 +122,11 @@ export async function fetchStations(q: RadioQuery = {}): Promise<any[]> {
     case 'top':
       path = `/json/stations/topclick/${limit}?hidebroken=true&offset=${offset}`
       break
-    case 'country':
-      path = `/json/stations/search?countrycode=${enc(q.countryCode || 'CN')}&hidebroken=true&order=clickcount&reverse=true&limit=${limit}&offset=${offset}`
+    case 'country': {
+      const code = await normalizeCountryCode(q.countryCode)
+      path = `/json/stations/search?countrycode=${enc(code)}&hidebroken=true&order=clickcount&reverse=true&limit=${limit}&offset=${offset}`
       break
+    }
     case 'tag':
       path = `/json/stations/search?tag=${enc(q.tag || 'jazz')}&hidebroken=true&order=clickcount&reverse=true&limit=${limit}&offset=${offset}`
       break
@@ -117,12 +145,14 @@ export async function fetchStations(q: RadioQuery = {}): Promise<any[]> {
   return (Array.isArray(data) ? data : []).map(mapStation)
 }
 
-/** 国家 / 标签列表（用于分类浏览） */
+/** 国家 / 标签列表（用于分类浏览）：按电台数量排序，常用项排前面 */
 export async function fetchFacets(kind: 'countries' | 'tags'): Promise<string[]> {
   const data = await request(`/json/${kind}`)
   return (Array.isArray(data) ? data : [])
-    .map((x: any) => (kind === 'countries' ? x.name : x.name))
-    .filter(Boolean)
+    .map((x: any) => ({ name: String(x.name || '').trim(), count: Number(x.stationcount) || 0 }))
+    .filter((x) => x.name)
+    .sort((a, b) => b.count - a.count)
+    .map((x) => x.name)
     .slice(0, 120)
 }
 
