@@ -705,3 +705,26 @@ input, button, .album-card, .pl-row, .quality-option, .theme-option,
   .playlist-scroll { min-height: 60px; }
   .user-avatar { width: 26px; height: 26px; }
 }
+
+/* ==================== 三种 UI 布局 ==================== */
+/* 经典：保持默认（原骨架不改动） */
+
+/* 沉浸：内容区更宽、留白更大、弱化边框，强调封面与歌词 */
+html[data-layout="immersive"] .sidebar { width: 180px; }
+html[data-layout="immersive"] .content { padding: 26px 5vw 40px; }
+html[data-layout="immersive"] .app-body { gap: 6px; }
+html[data-layout="immersive"] .settings-card,
+html[data-layout="immersive"] .playlist-view,
+html[data-layout="immersive"] .online-radio-view { max-width: 1080px; margin-left: auto; margin-right: auto; }
+html[data-layout="immersive"] .nav-item { border-radius: 12px; }
+html[data-layout="immersive"] .playerbar { background: color-mix(in srgb, var(--card) 88%, transparent); backdrop-filter: blur(24px); }
+
+/* 杂志：侧栏更宽、内容区双栏卡片、封面更大更圆润 */
+html[data-layout="magazine"] .sidebar { width: 232px; border-right: none; }
+html[data-layout="magazine"] .content { padding: 22px 30px 40px; }
+html[data-layout="magazine"] .section-title { font-size: 20px; letter-spacing: 0.5px; }
+html[data-layout="magazine"] .playlist-grid,
+html[data-layout="magazine"] .or-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px; }
+html[data-layout="magazine"] .playlist-cover,
+html[data-layout="magazine"] .or-card-cover { border-radius: 16px; aspect-ratio: 1 / 1; }
+html[data-layout="magazine"] .settings-card { border-radius: 18px; }
