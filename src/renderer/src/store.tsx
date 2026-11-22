@@ -33,7 +33,7 @@ import type { CommentItem, RadioCategory, LyricSearchItem, DownloadDialog, Quali
 import { translate, type Locale } from './i18n'
 import { coverUrl } from './utils/cover'
 import { probeLabel, formatSize, levelLabel } from './utils/quality'
-import { EQ_PRESETS, ensureGraph, configureEq, setEqEnabled, startPcmCapture, stopPcmCapture } from './utils/audioGraph'
+import { EQ_PRESETS, ensureGraph, configureEq, setEqEnabled, startPcmCapture, stopPcmCapture, hasAudioGraph } from './utils/audioGraph'
 
 interface PlayerState {
   current: Track | null
@@ -824,27 +824,96 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch { /* 分类失败不影响电台列表 */ }
   }, [])
 
-  // 播放网络电台：把流地址注册到本地代理（同源，便于 Web Audio 分析与转写）
+  // ===== 在线收音机播放：HLS / 本地代理 / 直连 三级策略 =====
+  const hlsRef = useRef<any>(null)
+  const radioGenRef = useRef(0)
+
+  /** 销毁 hls.js 实例（切台 / 切歌 / 停止时都要调用） */
+  const destroyRadioHls = useCallback(() => {
+    if (hlsRef.current) {
+      try { hlsRef.current.destroy() } catch { /* 忽略 */ }
+      hlsRef.current = null
+    }
+  }, [])
+
+  /** 等待 <audio> 真正可播（playing / canplay / loadeddata），或超时、报错 */
+  const waitPlayable = useCallback((el: HTMLAudioElement, timeoutMs = 8000) => new Promise<void>((resolve, reject) => {
+    let done = false
+    const finish = (err?: Error) => {
+      if (done) return
+      done = true
+      el.removeEventListener('error', onError)
+      el.removeEventListener('playing', onOk)
+      el.removeEventListener('canplay', onOk)
+      el.removeEventListener('loadeddata', onOk)
+      clearTimeout(timer)
+      if (err) reject(err)
+      else resolve()
+    }
+    const onError = () => finish(new Error('音源无法播放'))
+    const onOk = () => finish()
+    const timer = setTimeout(() => {
+      // 已经拿到元数据说明流是通的，只是缓冲慢：别急着重开，继续等它出声
+      if (el.readyState >= 1) finish()
+      else finish(new Error('连接超时'))
+    }, timeoutMs)
+    el.addEventListener('error', onError)
+    el.addEventListener('playing', onOk)
+    el.addEventListener('canplay', onOk)
+    el.addEventListener('loadeddata', onOk)
+  }), [])
+
+  /** 用 hls.js 播放 m3u8；优先走本地代理（播放列表 + 分片全部同源，绕开 CORS） */
+  const playHls = useCallback(async (url: string, gen: number) => {
+    if (!audio) throw new Error('音频未就绪')
+    const mod: any = await import('hls.js')
+    const Hls = mod?.default || mod
+    if (!Hls?.isSupported?.()) throw new Error('当前内核不支持 HLS')
+    const proxied = await window.eApi.radioHlsUrl(url).catch(() => '')
+    const candidates = [proxied, url].filter(Boolean) as string[]
+    let lastErr: any = null
+    for (const src of candidates) {
+      if (gen !== radioGenRef.current) throw new Error('已切换电台')
+      try {
+        destroyRadioHls()
+        await new Promise<void>((resolve, reject) => {
+          const hls = new Hls({ enableWorker: true, lowLatencyMode: false, backBufferLength: 30 })
+          hlsRef.current = hls
+          let settled = false
+          const ok = () => { if (!settled) { settled = true; resolve() } }
+          const fail = (_ev: any, data: any) => {
+            if (!data?.fatal || settled) return
+            settled = true
+            try { hls.destroy() } catch { /* 忽略 */ }
+            if (hlsRef.current === hls) hlsRef.current = null
+            reject(new Error(data?.details || 'HLS 加载失败'))
+          }
+          hls.on(Hls.Events.MANIFEST_PARSED, ok)
+          hls.on(Hls.Events.ERROR, fail)
+          hls.loadSource(src)
+          hls.attachMedia(audio)
+        })
+        audio.crossOrigin = 'anonymous'
+        audio.play().catch(() => {})
+        return
+      } catch (e) { lastErr = e }
+    }
+    throw lastErr || new Error('HLS 播放失败')
+  }, [audio, destroyRadioHls])
+
+  // 播放网络电台：HLS 优先，其次本地代理（同源，可视化/转写都可用），最后直连
   const playRadioStation = useCallback(async (s: RadioStation) => {
     const streamUrl = s.urlResolved || s.url
     if (!streamUrl) { setMessage('该电台暂无可用流地址'); return }
     try { window.eApi.radioClick(s.stationuuid).catch(() => {}) } catch { /* 上报失败静默 */ }
+    const gen = ++radioGenRef.current
+    destroyRadioHls()
     setCurrentStation(s)
     setTranscripts([])
     stopPcmCapture()
     setTranscriptActive(false)
     if (!audio) { setMessage('音频未就绪，请稍后重试'); return }
-    // 默认直连电台原始流：很多电台会拒绝带网易云 Referer 的代理请求，
-    // 且 <audio> 播放跨域音频本身不需要 CORS，直连成功率最高。
-    // 只有开启本地转写（需要 Web Audio 分析、必须同源）时才走本地代理。
-    let src = streamUrl
-    audio.removeAttribute('crossorigin')
-    if (transcriptActiveRef.current) {
-      let proxied = ''
-      try { proxied = await window.eApi.audioRegister(streamUrl, true).catch(() => '') } catch { proxied = '' }
-      if (proxied) { src = proxied; audio.crossOrigin = 'anonymous' }
-    }
-    audio.src = src
+    audio.pause()
     // 电台无时长概念，进度条隐藏由 currentStation 决定
     setPlayer((p) => ({
       ...p,
@@ -861,50 +930,139 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } as Track,
       isPlaying: true
     }))
-    audio.play().catch(() => setMessage('电台播放被拦截，请再次点击播放'))
-  }, [setMessage])
+    setMessage(`正在连接「${s.name}」…`)
+
+    // 1) 明确是 m3u8，直接走 HLS
+    if (/\.m3u8(\?|$)/i.test(streamUrl)) {
+      try {
+        await playHls(streamUrl, gen)
+        setMessage(`正在播放：${s.name}`)
+        return
+      } catch { /* 落到探测流程 */ }
+    } else {
+      // 2) 没有 Web Audio 音频图、也没开转写时，先直连（起播最快）
+      if (!hasAudioGraph() && !transcriptActiveRef.current) {
+        try {
+          audio.removeAttribute('crossorigin')
+          audio.src = streamUrl
+          audio.play().catch(() => {})
+          await waitPlayable(audio, 6000)
+          setMessage(`正在播放：${s.name}`)
+          return
+        } catch { /* 直连失败，转代理 */ }
+      }
+      if (gen !== radioGenRef.current) return
+      // 3) 本地代理：同源，可视化与转写都能用
+      const proxied = await window.eApi.audioRegister(streamUrl, true).catch(() => '')
+      if (gen !== radioGenRef.current) return
+      if (proxied) {
+        try {
+          audio.crossOrigin = 'anonymous'
+          audio.src = proxied
+          audio.play().catch(() => {})
+          await waitPlayable(audio, 8000)
+          setMessage(`正在播放：${s.name}`)
+          return
+        } catch { /* 继续兜底 */ }
+      }
+    }
+    if (gen !== radioGenRef.current) return
+
+    // 3) 探测真实类型：可能是 HLS、也可能是被 .pls/.m3u 包了一层
+    const probe = await window.eApi.radioProbe(streamUrl).catch(() => null)
+    if (gen !== radioGenRef.current) return
+    if (probe?.kind === 'hls') {
+      try {
+        await playHls(probe.url || streamUrl, gen)
+        setMessage(`正在播放：${s.name}`)
+        return
+      } catch { /* 继续兜底 */ }
+    }
+    if (probe?.kind === 'audio' && probe.url && probe.url !== streamUrl) {
+      // 播放列表解析出的真实地址
+      const proxied = await window.eApi.audioRegister(probe.url, true).catch(() => '')
+      if (proxied && gen === radioGenRef.current) {
+        try {
+          audio.crossOrigin = 'anonymous'
+          audio.src = proxied
+          audio.play().catch(() => {})
+          await waitPlayable(audio, 8000)
+          setMessage(`正在播放：${s.name}`)
+          return
+        } catch { /* 继续兜底 */ }
+      }
+    }
+
+    // 4) 最后直连原始地址（可能因跨域导致可视化/转写不可用，但至少能听）
+    try {
+      audio.removeAttribute('crossorigin')
+      audio.src = streamUrl
+      audio.play().catch(() => {})
+      await waitPlayable(audio, 7000)
+      setMessage(`正在播放：${s.name}`)
+      return
+    } catch { /* 确实放不了 */ }
+
+    setPlayer((p) => ({ ...p, isPlaying: false }))
+    setMessage(`「${s.name}」暂时无法播放${probe?.error ? `（${probe.error}）` : ''}，换一个台试试`)
+  }, [setMessage, playHls, destroyRadioHls, waitPlayable])
 
   const stopRadio = useCallback(() => {
+    radioGenRef.current++
+    destroyRadioHls()
     setCurrentStation(null)
     setTranscriptActive(false)
     setTranscripts([])
     stopPcmCapture()
     audio?.pause()
-  }, [])
+  }, [destroyRadioHls])
 
   // 实时转文字：每 4 秒抓一段 PCM 交给本地 ASR，结果像歌词一样追加
   const toggleTranscript = useCallback(async (on: boolean) => {
     if (!on) { stopPcmCapture(); setTranscriptActive(false); return }
-    const st = await window.eApi.asrStatus().catch(() => ({ ready: false }))
-    if (!st?.ready) { setMessage('请先在设置中下载语音转文字模型'); return }
+    const st = await window.eApi.asrStatus().catch(() => ({ ready: false, size: 0 }))
+    if (!st?.ready) { setMessage('请先在「设置 → 语音转文字」里下载模型（约 230MB）'); return }
     const ok = ensureGraph(audio)
     if (!ok) { setMessage('音频初始化失败，无法开启转写'); return }
-    // 电台默认直连播放（跨域），转写需要同源音频：切换到本地代理重播一次
-    if (currentStation) {
+    // HLS 走的是 MSE(blob)，本身同源，不需要换源；
+    // 只有直连的跨域电台才需要切到本地代理重播，否则 Web Audio 会因 CORS 输出静音
+    const usingHls = !!hlsRef.current
+    if (currentStation && !usingHls && audio && audio.crossOrigin !== 'anonymous') {
       const url = currentStation.urlResolved || currentStation.url
-      let proxied = ''
-      try { proxied = await window.eApi.audioRegister(url, true).catch(() => '') } catch { proxied = '' }
-      if (proxied && audio) {
-        audio.crossOrigin = 'anonymous'
-        audio.src = proxied
-        audio.play().catch(() => {})
+      const proxied = await window.eApi.audioRegister(url, true).catch(() => '')
+      if (proxied) {
+        try {
+          audio.crossOrigin = 'anonymous'
+          audio.src = proxied
+          await waitPlayable(audio, 8000)
+          audio.play().catch(() => {})
+        } catch { /* 代理失败时保持原播放 */ }
       }
     }
     setTranscriptActive(true)
+    let errorShown = false
     startPcmCapture(4, async (pcm) => {
       try {
-        const arr = Array.from(pcm)
-        const text = await window.eApi.asrRecognize(arr)
-        if (typeof text === 'string' && text.trim()) {
-          setTranscripts((prev) => [
-            ...prev.slice(-40),
-            { id: Date.now(), text: text.trim(), time: Date.now() }
-          ])
+        const text = await window.eApi.asrRecognize(Array.from(pcm))
+        if (typeof text === 'string') {
+          if (text.trim()) {
+            setTranscripts((prev) => [
+              ...prev.slice(-40),
+              { id: Date.now(), text: text.trim(), time: Date.now() }
+            ])
+          }
+          return
+        }
+        // 主进程返回 { error }：只提示一次，避免刷屏
+        const msg = (text as any)?.error
+        if (msg && !errorShown) {
+          errorShown = true
+          setMessage(`语音识别失败：${msg}`)
         }
       } catch { /* 单段识别失败不中断 */ }
     })
     setMessage('实时转文字已开启')
-  }, [setMessage, currentStation])
+  }, [setMessage, currentStation, waitPlayable])
 
   // 电台列表：优先走聚合接口（分页遍历+缓存，一次拿到全部分类电台）；失败降级单接口
   const loadRadios = useCallback(async () => {
@@ -1111,6 +1269,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   /** 获取播放地址并播放 */
   const resolveAndPlay = useCallback(
     async (track: Track, autoPlay: boolean, keepProgress = false) => {
+      // 切到普通歌曲：取消未完成的电台连接并销毁 HLS 实例
+      radioGenRef.current++
+      destroyRadioHls()
+      setCurrentStation(null)
       setSongUrlLoading(true)
       const savedTime = keepProgress && audio ? audio.currentTime : 0
       // 本地音乐：直接 file:// 播放，不经过音源接口
@@ -1186,7 +1348,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setSongUrlLoading(false)
       }
     },
-    [setMessage]
+    [setMessage, destroyRadioHls]
   )
 
   const playTrack = useCallback(
