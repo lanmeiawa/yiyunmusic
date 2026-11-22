@@ -22,6 +22,7 @@ import {
   switchAccount
 } from './api'
 import { startAudioProxy, stopAudioProxy, registerAudioUrl, registerLocalAudio } from './audio-proxy'
+import { registerAsrIpc } from './asr'
 
 let mainWindow: BrowserWindow | null = null
 let lyricsWindow: BrowserWindow | null = null
@@ -808,6 +809,33 @@ function setupIpc() {
       console.error('[dj:fetch-all] 失败:', e?.message || e)
       return { error: e?.message || String(e), categories: [], byCategory: {}, audiobook: [], totalRadios: 0, hotPrograms: [] }
     }
+  })
+
+  // ===== 本地语音转文本（sherpa-onnx + SenseVoice，离线）=====
+  try {
+    registerAsrIpc(() => mainWindow)
+  } catch (e: any) {
+    console.warn('[asr] IPC 注册失败:', e?.message || e)
+  }
+
+  // ===== 在线收音机（Radio Browser，免费无需 API key）=====
+  ipcMain.handle('radio:stations', async (_e, q: any) => {
+    try {
+      const mod = await import('./api-radio')
+      return await mod.fetchStations(q || {})
+    } catch (e: any) {
+      console.error('[radio:stations] 失败:', e?.message || e)
+      return { error: e?.message || String(e) }
+    }
+  })
+  ipcMain.handle('radio:facets', async (_e, kind: 'countries' | 'tags') => {
+    try {
+      const mod = await import('./api-radio')
+      return await mod.fetchFacets(kind === 'tags' ? 'tags' : 'countries')
+    } catch { return [] }
+  })
+  ipcMain.handle('radio:click', async (_e, uuid: string) => {
+    try { const mod = await import('./api-radio'); await mod.registerClick(uuid) } catch { /* 静默 */ }
   })
 
   // ===== 下载功能 =====
