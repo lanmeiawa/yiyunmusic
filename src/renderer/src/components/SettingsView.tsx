@@ -61,6 +61,15 @@ const PRESET_COLORS = [
 
 export default function SettingsView() {
   const { customization, setCustomization, chooseBg, bgData, theme, setTheme, setMessage, t } = useApp()
+
+  // 本地语音模型状态与下载进度
+  const [asrStatus, setAsrStatus] = useState<{ ready: boolean; size: number } | null>(null)
+  const [asrBusy, setAsrBusy] = useState(false)
+  const [asrPct, setAsrPct] = useState(0)
+  useEffect(() => {
+    window.eApi.asrStatus().then(setAsrStatus).catch(() => setAsrStatus({ ready: false, size: 0 }))
+    return window.eApi.onAsrProgress((p) => setAsrPct(p.pct))
+  }, [])
   const [customColor, setCustomColor] = useState(customization.primary || '#ff6b8b')
   const [appNameDraft, setAppNameDraft] = useState(customization.appName || '')
   const [welcomeColorDraft, setWelcomeColorDraft] = useState(customization.welcomeColor || '#ff6b8b')
@@ -295,6 +304,21 @@ export default function SettingsView() {
       {/* ===== 布局 ===== */}
       <section className="settings-card">
         <h2>界面布局</h2>
+        <p className="settings-desc">三种整体布局，切换后整个界面立即生效。</p>
+        <div className="settings-row wrap">
+          {[
+            { v: 'classic', l: '经典', d: '左栏 + 主区 + 底栏' },
+            { v: 'immersive', l: '沉浸', d: '大封面 + 弱边框 + 更宽内容区' },
+            { v: 'magazine', l: '杂志', d: '双栏卡片流 + 大图封面' }
+          ].map((x) => (
+            <button
+              key={x.v}
+              className={`settings-chip ${customization.layout === x.v ? 'sel' : ''}`}
+              onClick={() => setCustomization({ layout: x.v as any })}
+              title={x.d}
+            >{x.l}</button>
+          ))}
+        </div>
         <label className="settings-switch-row">
           <span>
             <b>侧边栏紧凑模式</b>
@@ -316,6 +340,58 @@ export default function SettingsView() {
             type="checkbox"
             checked={customization.showTranslation}
             onChange={(e) => setCustomization({ showTranslation: e.target.checked })}
+          />
+          <span className="settings-switch" />
+        </label>
+      </section>
+
+      {/* ===== 收音机语音转文字模型 ===== */}
+      <section className="settings-card">
+        <h2>{t('settings.radioModel')}</h2>
+        <p className="settings-desc">
+          离线语音识别模型（SenseVoice int8，约 230MB）。下载后可让在线收音机把正在播放的语音实时转成文字，像歌词一样显示。识别全程在本地完成，不联网、不上传音频。
+        </p>
+        <div className="settings-row">
+          {asrStatus?.ready ? (
+            <>
+              <span className="settings-chip sel">✓ {t('settings.radioModelDownloaded')}（{(asrStatus.size / 1048576).toFixed(0)} MB）</span>
+              <button className="settings-chip" onClick={async () => {
+                await window.eApi.asrDelete()
+                setAsrStatus({ ready: false, size: 0 })
+                await setCustomization({ radioTranscript: false })
+                setMessage('语音模型已删除')
+              }}>{t('settings.radioModelDelete')}</button>
+            </>
+          ) : (
+            <button
+              className="settings-chip sel"
+              disabled={asrBusy}
+              onClick={async () => {
+                setAsrBusy(true); setAsrPct(0)
+                setMessage('正在下载语音模型，请勿关闭应用…')
+                const r = await window.eApi.asrDownload().catch((e: any) => ({ ok: false, error: e?.message }))
+                setAsrBusy(false)
+                if (r?.ok) {
+                  setAsrStatus(await window.eApi.asrStatus())
+                  await setCustomization({ radioTranscript: true })
+                  setMessage('语音模型下载完成，可在收音机里开启实时转写')
+                } else {
+                  setMessage('模型下载失败：' + (r?.error || '网络异常'))
+                }
+              }}
+            >{asrBusy ? `${t('settings.radioModelDownloading')} ${(asrPct * 100).toFixed(0)}%` : t('settings.radioModelDownload')}</button>
+          )}
+        </div>
+        <label className="settings-switch-row">
+          <span>
+            <b>{t('radio.transcript')}</b>
+            <i>{asrStatus?.ready ? '收听电台时自动把语音转成文字' : t('radio.transcriptHint')}</i>
+          </span>
+          <input
+            type="checkbox"
+            checked={!!customization.radioTranscript && !!asrStatus?.ready}
+            disabled={!asrStatus?.ready}
+            onChange={(e) => setCustomization({ radioTranscript: e.target.checked })}
           />
           <span className="settings-switch" />
         </label>
