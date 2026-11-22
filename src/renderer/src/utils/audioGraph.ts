@@ -119,3 +119,47 @@ export function readWaveform(): Uint8Array | null {
   }
   return flat ? null : waveData
 }
+
+/* ==================== 语音转文本 PCM 采样 ==================== */
+let captureNode: ScriptProcessorNode | null = null
+let captureBuffer: number[] = []
+let captureCb: ((pcm: Float32Array) => void) | null = null
+const CAPTURE_RATE = 16000
+
+/**
+ * 从当前音频图抓取 PCM（16k 单声道），每当累积满 seconds 秒回调一次。
+ * 用于把在线收音机的声音交给本地 ASR 识别。
+ */
+export function startPcmCapture(seconds: number, cb: (pcm: Float32Array) => void): boolean {
+  if (!ctx || !analyser) return false
+  stopPcmCapture()
+  captureCb = cb
+  captureBuffer = []
+  try {
+    captureNode = ctx.createScriptProcessor(4096, 1, 1)
+    captureNode.onaudioprocess = (e) => {
+      const input = e.inputBuffer.getChannelData(0)
+      // 重采样到 16k：按 ctx.sampleRate / 16000 步进取样
+      const step = (ctx?.sampleRate || 44100) / CAPTURE_RATE
+      for (let i = 0; i < input.length; i += step) captureBuffer.push(input[Math.floor(i)])
+      // 静音跳过：避免把纯静音喂给识别器
+      if (captureBuffer.length >= seconds * CAPTURE_RATE) {
+        const peak = captureBuffer.reduce((m, v) => Math.max(m, Math.abs(v)), 0)
+        if (peak > 0.01 && captureCb) captureCb(new Float32Array(captureBuffer))
+        captureBuffer = []
+      }
+    }
+    // 接到分析器之后，不接到 destination（避免重复发声）
+    analyser.connect(captureNode)
+    captureNode.connect(ctx.destination)
+    return true
+  } catch { return false }
+}
+
+export function stopPcmCapture() {
+  try { if (captureNode && analyser) analyser.disconnect(captureNode) } catch {}
+  try { captureNode?.disconnect() } catch {}
+  captureNode = null
+  captureCb = null
+  captureBuffer = []
+}
