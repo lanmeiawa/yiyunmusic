@@ -14,7 +14,7 @@ export type LayoutName = 'classic' | 'immersive' | 'magazine'
 /** 视图名（含在线收音机，radio 为听书电台） */
 export type ViewName =
   | 'discover' | 'playlist' | 'lyrics' | 'search' | 'history'
-  | 'settings' | 'radio' | 'profile' | 'local' | 'onlineRadio'
+  | 'settings' | 'radio' | 'profile' | 'local' | 'onlineRadio' | 'fm'
 
 /** 在线收音机频道（Radio Browser 数据源） */
 export interface RadioStation {
@@ -107,6 +107,8 @@ export interface Customization {
   radioTranscript: boolean
   /** 收音机转写：模型是否就绪（随安装包分发） */
   radioModelReady?: boolean
+  /** 开机自启 */
+  autoLaunch: boolean
 }
 
 export const DEFAULT_CUSTOMIZATION: Customization = {
@@ -137,7 +139,8 @@ export const DEFAULT_CUSTOMIZATION: Customization = {
   disclaimerAccepted: false,
   layout: 'classic',
   radioTranscript: false,
-  radioModelReady: false
+  radioModelReady: false,
+  autoLaunch: false
 }
 
 export interface DesktopLyricsSettings {
