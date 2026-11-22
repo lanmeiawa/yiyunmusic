@@ -20,7 +20,8 @@ import {
   clearQualityCache,
   smartSearch,
   switchAccount,
-  fetchFmBatch
+  fetchFmBatch,
+  searchSection
 } from './api'
 import { startAudioProxy, stopAudioProxy, registerAudioUrl, registerLocalAudio, hlsProxyUrl, probeStream } from './audio-proxy'
 import { registerAsrIpc } from './asr'
@@ -631,6 +632,11 @@ function setupIpc() {
   // 播放地址
   ipcMain.handle('song:url', async (_e, id, level) => getSongUrl(id, level))
   // 多级兜底搜索
+  // 搜索补充分区（专辑 / 听书 / 歌词）：点开分类时再请求，减少搜索时的请求数
+  ipcMain.handle('search:section', async (_e, kw: string, kind: 'albums' | 'shows' | 'lyrics') => {
+    try { return await searchSection(kw, kind) } catch (e: any) { return { error: e?.message || '加载失败' } }
+  })
+
   ipcMain.handle('search:smart', async (_e, kw: string) => {
     try {
       return await smartSearch(kw)
