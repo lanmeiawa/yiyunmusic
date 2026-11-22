@@ -1,6 +1,6 @@
 {
   "name": "yiyunmusic",
-  "version": "2.0.5",
+  "version": "2.1.0",
   "private": true,
   "description": "把动态歌词做到极致的网易云音乐第三方桌面客户端",
   "homepage": "https://github.com/lanmeiawa/yiyunmusic",
@@ -19,7 +19,8 @@
     "electron-store": "^8.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "ffmpeg-static": "5.2.0"
+    "ffmpeg-static": "5.2.0",
+    "sherpa-onnx": "^1.13.4"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
@@ -48,6 +49,13 @@
       {
         "from": "build/icon.png",
         "to": "icon.png"
+      },
+      {
+        "from": "build/asr-model",
+        "to": "asr-model",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "asarUnpack": [
