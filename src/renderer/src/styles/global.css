@@ -447,6 +447,21 @@ input, button, .album-card, .pl-row, .quality-option, .theme-option,
 :root.sidebar-collapsed .sidebar .side-user { flex-direction: column; gap: 6px; }
 :root.sidebar-collapsed .sidebar .user-meta { display: none; }
 :root.sidebar-collapsed .sidebar .nav-item { justify-content: center; }
+/* 折叠后鼠标悬停临时展开，避免折叠后完全找不到导航与歌单 */
+:root.sidebar-collapsed .sidebar:hover {
+  width: 212px; min-width: 212px; z-index: 25;
+  box-shadow: 16px 0 36px rgba(20, 22, 40, 0.16);
+}
+:root.sidebar-collapsed .sidebar:hover .nav-item span,
+:root.sidebar-collapsed .sidebar:hover .side-section-title,
+:root.sidebar-collapsed .sidebar:hover .playlist-item-name,
+:root.sidebar-collapsed .sidebar:hover .side-count,
+:root.sidebar-collapsed .sidebar:hover .side-empty,
+:root.sidebar-collapsed .sidebar:hover .playlist-item-icon,
+:root.sidebar-collapsed .sidebar:hover .user-meta { display: revert; }
+:root.sidebar-collapsed .sidebar:hover .playlist-item { justify-content: flex-start; padding-left: 10px; padding-right: 10px; }
+:root.sidebar-collapsed .sidebar:hover .side-user { flex-direction: row; gap: 10px; }
+:root.sidebar-collapsed .sidebar:hover .nav-item { justify-content: flex-start; }
 
 /* ============ 复古主题（千千静听 / Win98-2000 风格，复古版专用） ============ */
 [data-theme="retro"] {
@@ -717,19 +732,30 @@ html[data-layout="immersive"] .app-body { gap: 0; }
 html[data-layout="immersive"] .sidebar {
   width: 68px; min-width: 68px; padding: 16px 8px;
   background: transparent; border-right: 1px solid var(--border);
+  flex-shrink: 0; z-index: 25;
+  transition: width 0.22s ease, min-width 0.22s ease, padding 0.22s ease, box-shadow 0.22s ease;
 }
-html[data-layout="immersive"] .sidebar .side-section-title,
-html[data-layout="immersive"] .sidebar .nav-item span,
-html[data-layout="immersive"] .sidebar .playlist-scroll,
-html[data-layout="immersive"] .sidebar .side-count,
-html[data-layout="immersive"] .sidebar .user-meta,
-html[data-layout="immersive"] .sidebar .side-footer .nav-item span { display: none !important; }
-html[data-layout="immersive"] .sidebar .side-footer { justify-content: center; }
-html[data-layout="immersive"] .sidebar .nav-item {
+/* 收起态只留图标；鼠标移上去自动展开成完整侧栏，避免"整块消失"找不到入口 */
+html[data-layout="immersive"] .sidebar:not(:hover) .side-section-title,
+html[data-layout="immersive"] .sidebar:not(:hover) .nav-item span,
+html[data-layout="immersive"] .sidebar:not(:hover) .playlist-scroll,
+html[data-layout="immersive"] .sidebar:not(:hover) .side-count,
+html[data-layout="immersive"] .sidebar:not(:hover) .user-meta { display: none !important; }
+html[data-layout="immersive"] .sidebar:not(:hover) .side-footer { justify-content: center; }
+html[data-layout="immersive"] .sidebar:not(:hover) .nav-item {
   justify-content: center; padding: 10px 0; width: 52px; margin: 0 auto;
   border-radius: 14px;
 }
 html[data-layout="immersive"] .sidebar .side-nav { gap: 8px; }
+html[data-layout="immersive"] .sidebar:hover {
+  width: 208px; min-width: 208px; padding: 16px 12px;
+  background: var(--bg-side);
+  box-shadow: 16px 0 36px rgba(20, 22, 40, 0.16);
+}
+html[data-layout="immersive"] .sidebar:hover .nav-item {
+  justify-content: flex-start; padding: 0 14px; width: 100%; margin: 0;
+  border-radius: 10px;
+}
 /* 注意：各视图根节点自带内边距（36px 左右），这里只做居中限宽，
    不能再给 .content 叠加 padding —— 否则底部会多出一条 100px+ 的死空白 */
 html[data-layout="immersive"] .content {
