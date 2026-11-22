@@ -90,6 +90,12 @@ export interface Customization {
   language: 'zh' | 'en'
   /** 首次启动免责声明已确认 */
   disclaimerAccepted?: boolean
+  /** UI 布局风格 */
+  layout?: 'classic' | 'immersive' | 'magazine'
+  /** 收音机转写：是否启用本地语音识别 */
+  radioTranscript?: boolean
+  /** 收音机转写：模型是否就绪 */
+  radioModelReady?: boolean
 }
 
 export const DEFAULT_CUSTOMIZATION: Customization = {
@@ -117,7 +123,10 @@ export const DEFAULT_CUSTOMIZATION: Customization = {
   shortcuts: { ...DEFAULT_SHORTCUTS },
   searchHistory: [],
   language: 'zh',
-  disclaimerAccepted: false
+  disclaimerAccepted: false,
+  layout: 'classic',
+  radioTranscript: false,
+  radioModelReady: false
 }
 
 /** 主窗口位置与大小记忆 */
