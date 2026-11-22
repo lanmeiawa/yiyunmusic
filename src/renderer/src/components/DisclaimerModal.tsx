@@ -3,7 +3,7 @@ import { IconMusic } from './Icons'
 import { useApp } from '../store'
 
 /**
- * 首次启动使用须知：账号、播放与版权提示。
+ * 首次启动使用须知：账号、播放与「尊重版权、支持正版」提示。
  * 用户同意后才进入登录/主界面，不同意则退出应用。
  */
 export default function DisclaimerModal() {
@@ -30,7 +30,7 @@ export default function DisclaimerModal() {
           </div>
           <div className="disclaimer-item">
             <span className="disclaimer-num">3</span>
-            <p>音乐版权归原作者与平台所有。喜欢的话，在官方平台收听或开通会员是最好的支持；本项目采用非商业许可，<strong>个人使用与分享都欢迎</strong>。</p>
+            <p><strong>请支持正版</strong>：音乐版权归原作者与平台所有。本项目不提供、不存储、不分发任何音乐文件；喜欢一首歌或一张专辑，在官方平台收听、购买或开通会员就是最好的支持。</p>
           </div>
         </div>
 
