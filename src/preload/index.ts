@@ -24,6 +24,7 @@ const api = {
   songQualities: (id: number) => ipcRenderer.invoke('song:qualities', id),
   // 多级兜底搜索（云搜索 → 旧搜索 → 建议词）
   smartSearch: (keyword: string) => ipcRenderer.invoke('search:smart', keyword),
+  searchSection: (keyword: string, kind: 'albums' | 'shows' | 'lyrics') => ipcRenderer.invoke('search:section', keyword, kind),
   // 音频流代理（供 Web Audio 频谱分析与均衡器使用）
   audioRegister: (url: string, radio?: boolean) => ipcRenderer.invoke('audio:register', url, !!radio),
   audioRegisterLocal: (filePath: string) => ipcRenderer.invoke('audio:register-local', filePath),
