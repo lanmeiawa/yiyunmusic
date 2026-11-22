@@ -250,6 +250,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentStation, setCurrentStation] = useState<RadioStation | null>(null)
   const [transcripts, setTranscripts] = useState<RadioTranscript[]>([])
   const [transcriptActive, setTranscriptActive] = useState(false)
+  const transcriptActiveRef = useRef(false)
+  transcriptActiveRef.current = transcriptActive
   const [theme, setThemeState] = useState<ThemeName>('light')
   const [quality, setQualityState] = useState<string>('exhigh')
   const [currentQuality, setCurrentQuality] = useState<string>('exhigh')
@@ -832,10 +834,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     stopPcmCapture()
     setTranscriptActive(false)
     if (!audio) { setMessage('音频未就绪，请稍后重试'); return }
-    let src = ''
-    try { src = await window.eApi.audioRegister(streamUrl).catch(() => '') } catch { src = '' }
-    audio.crossOrigin = 'anonymous'
-    audio.src = src || streamUrl
+    // 默认直连电台原始流：很多电台会拒绝带网易云 Referer 的代理请求，
+    // 且 <audio> 播放跨域音频本身不需要 CORS，直连成功率最高。
+    // 只有开启本地转写（需要 Web Audio 分析、必须同源）时才走本地代理。
+    let src = streamUrl
+    audio.removeAttribute('crossorigin')
+    if (transcriptActiveRef.current) {
+      let proxied = ''
+      try { proxied = await window.eApi.audioRegister(streamUrl, true).catch(() => '') } catch { proxied = '' }
+      if (proxied) { src = proxied; audio.crossOrigin = 'anonymous' }
+    }
+    audio.src = src
     // 电台无时长概念，进度条隐藏由 currentStation 决定
     setPlayer((p) => ({
       ...p,
@@ -870,6 +879,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!st?.ready) { setMessage('请先在设置中下载语音转文字模型'); return }
     const ok = ensureGraph(audio)
     if (!ok) { setMessage('音频初始化失败，无法开启转写'); return }
+    // 电台默认直连播放（跨域），转写需要同源音频：切换到本地代理重播一次
+    if (currentStation) {
+      const url = currentStation.urlResolved || currentStation.url
+      let proxied = ''
+      try { proxied = await window.eApi.audioRegister(url, true).catch(() => '') } catch { proxied = '' }
+      if (proxied && audio) {
+        audio.crossOrigin = 'anonymous'
+        audio.src = proxied
+        audio.play().catch(() => {})
+      }
+    }
     setTranscriptActive(true)
     startPcmCapture(4, async (pcm) => {
       try {
@@ -884,7 +904,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch { /* 单段识别失败不中断 */ }
     })
     setMessage('实时转文字已开启')
-  }, [setMessage])
+  }, [setMessage, currentStation])
 
   // 电台列表：优先走聚合接口（分页遍历+缓存，一次拿到全部分类电台）；失败降级单接口
   const loadRadios = useCallback(async () => {
