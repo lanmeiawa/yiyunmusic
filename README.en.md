@@ -6,18 +6,18 @@ A third-party NetEase Cloud Music desktop client built with **Electron + React +
 
 ## Download
 
-Windows and Linux builds are published in the **same release page** — pick the one for your system: [v2.2.2 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.2.2).
+Windows and Linux builds are published in the **same release page** — pick the one for your system: [v2.2.3 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.2.3).
 
 **Windows 10 / 11 x64**
-- **yiyunmusic-Setup-2.2.2.exe** — installer (custom directory, desktop shortcut)
-- **yiyunmusic-portable-2.2.2.exe** — portable, no installation required
+- **yiyunmusic-Setup-2.2.3.exe** — installer (custom directory, desktop shortcut)
+- **yiyunmusic-portable-2.2.3.exe** — portable, no installation required
 
 **Linux x64**
-- **yiyunmusic-2.2.2-x86_64.AppImage** — universal (Arch / Ubuntu), `chmod +x` then run
-- **yiyunmusic-2.2.2-amd64.deb** — Ubuntu / Debian, `sudo apt install ./yiyunmusic-2.2.2-amd64.deb`
-- **yiyunmusic-2.2.2-x64.tar.gz** — portable tarball, extract and run `./yiyunmusic`
+- **yiyunmusic-2.2.3-x86_64.AppImage** — universal (Arch / Ubuntu), `chmod +x` then run
+- **yiyunmusic-2.2.3-amd64.deb** — Ubuntu / Debian, `sudo apt install ./yiyunmusic-2.2.3-amd64.deb`
+- **yiyunmusic-2.2.3-x64.tar.gz** — portable tarball, extract and run `./yiyunmusic`
 
-> Since v2.2.2 the login cookie is encrypted at rest instead of being stored as plain text in the config file.
+> Since v2.2.3 the login cookie is encrypted at rest instead of being stored as plain text in the config file.
 
 ## Code signing
 
@@ -89,4 +89,4 @@ yiyunmusic is an independently developed music player. You sign in with your own
 - Music, artwork and lyrics belong to their respective owners. If you enjoy something, please **listen, purchase or subscribe on the official platform** — that is the best way to support the creators.
 - Rights holders: if anything here seems inappropriate, please open an issue and we will address it promptly.
 
-**License**: [PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0) — personal, study and research use are welcome; for commercial use, please contact the author for permission. The [LICENSE](LICENSE) file is the official text; a [Chinese summary](docs/LICENSE.zh.md) is also provided.
+**License**: MIT — use it, change it, build with it, commercial use included; just keep the copyright notice. See [LICENSE](LICENSE).
