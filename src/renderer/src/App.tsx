@@ -12,6 +12,7 @@ import RadioView from './components/RadioView'
 import ProfileView from './components/ProfileView'
 import LocalView from './components/LocalView'
 import OnlineRadioView from './components/OnlineRadioView'
+import FmView from './components/FmView'
 import PlayerBar from './components/PlayerBar'
 import LoginModal from './components/LoginModal'
 import DisclaimerModal from './components/DisclaimerModal'
@@ -77,6 +78,7 @@ function Main() {
           {view === 'profile' && <ProfileView />}
           {view === 'local' && <LocalView />}
           {view === 'onlineRadio' && <OnlineRadioView />}
+          {view === 'fm' && <FmView />}
         </main>
       </div>
       <PlayerBar />
