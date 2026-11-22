@@ -589,6 +589,28 @@ export default function SettingsView() {
         </div>
       </section>
 
+      {/* ===== 启动与系统 ===== */}
+      <section className="settings-card">
+        <h2>启动与系统</h2>
+        <label className="settings-switch-row">
+          <span>
+            <b>开机自启</b>
+            <i>登录系统后自动启动亦云音乐；也可以随时在系统「启动应用」里关闭</i>
+          </span>
+          <input
+            type="checkbox"
+            checked={!!customization.autoLaunch}
+            onChange={async (e) => {
+              const on = e.target.checked
+              await setCustomization({ autoLaunch: on })
+              const actual = await window.eApi.appAutoLaunch(on).catch(() => false)
+              setMessage(actual === on ? (on ? '已开启开机自启' : '已关闭开机自启') : '系统未接受该设置，请检查系统权限')
+            }}
+          />
+          <span className="settings-switch" />
+        </label>
+      </section>
+
       {/* ===== 全局快捷键 ===== */}
       <section className="settings-card">
         <h2>全局快捷键</h2>
