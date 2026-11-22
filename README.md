@@ -94,32 +94,37 @@
 
 ## 下载
 
-Windows 和 Linux 现在放在**同一个发布页**，进去按系统挑就行：[v2.2.0 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.2.0)。
+Windows 和 Linux 现在放在**同一个发布页**，进去按系统挑就行：[v2.2.1 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.2.1)。
 
 ### Windows（10 / 11 x64）
 
-- **yiyunmusic-Setup-2.2.0.exe** —— 安装版（可自定义安装目录、自动创建快捷方式）
-- **yiyunmusic-portable-2.2.0.exe** —— 便携版，免安装，双击即用
+- **yiyunmusic-Setup-2.2.1.exe** —— 安装版（可自定义安装目录、自动创建快捷方式）
+- **yiyunmusic-portable-2.2.1.exe** —— 便携版，免安装，双击即用
 
 > 安装新版时会自动迁移旧版的登录态与个性化设置，无需重新扫码登录。登录凭证（Cookie）已加密存储，不再明文落盘。
 
 ### Linux（x64）
 
-- **yiyunmusic-2.2.0-x86_64.AppImage** —— Arch / 通用，`chmod +x` 后双击即可运行
-- **yiyunmusic-2.2.0-amd64.deb** —— Ubuntu / Debian，`sudo apt install ./yiyunmusic-2.2.0-amd64.deb`
-- **yiyunmusic-2.2.0-x64.tar.gz** —— 通用便携版，解压后运行 `./yiyunmusic`
+- **yiyunmusic-2.2.1-x86_64.AppImage** —— Arch / 通用，`chmod +x` 后双击即可运行
+- **yiyunmusic-2.2.1-amd64.deb** —— Ubuntu / Debian，`sudo apt install ./yiyunmusic-2.2.1-amd64.deb`
+- **yiyunmusic-2.2.1-x64.tar.gz** —— 通用便携版，解压后运行 `./yiyunmusic`
 
 ## 使用方法
 
-1. 首次启动确认免责声明
+1. 首次启动确认使用须知
 2. 用网易云音乐 App 扫码登录
 3. 点击歌单 / 双击歌曲即可播放
 4. 点播放条右侧的歌词按钮（或左侧「动态歌词」）进入歌词页
 5. 点标题栏的显示器图标开启桌面歌词
 
-## 免责声明
+## 关于本项目
 
-本项目是**第三方**客户端，非网易云官方产品，依赖网易云的非公开接口，接口可能随官方调整而变化。请尊重音乐版权、支持正版；本项目仅供个人学习与研究使用，请勿用于商业用途或大规模分发。
+亦云音乐是一个独立开发的音乐播放器：用你自己的网易云账号登录，歌单、收藏与播放记录都跟着账号走，界面和操作尽量贴近日常习惯。
+
+- 音乐、封面与歌词的版权归原作者与平台所有；本项目不存储、不分发音频文件，只在本机播放与展示。
+- 喜欢一首歌，最好的支持方式是在官方平台收听、购买或开通会员。
+- 许可：**PolyForm Noncommercial 1.0.0** —— 个人使用、学习与研究都欢迎；如需商用，请先联系作者获得授权，详见 [LICENSE](LICENSE)。
+
 
 ## 开发
 
