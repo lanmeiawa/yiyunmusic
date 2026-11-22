@@ -79,7 +79,7 @@
 - 全局搜索、歌单管理、收藏（同步「我喜欢的音乐」）、多账号切换、私人 FM
 - 本地音频直接播放（mp3 / flac / wav / m4a / ape / ogg 等）
 
-### 在线收音机（v2.1.1 新增）
+### 在线收音机（v2.1.2 新增）
 
 - **全球网络电台**：Radio Browser 免费开源数据源，无需 API key；热门 / 按国家 / 按风格 / 搜索四种找台方式
 - **实时转文字**：sherpa-onnx + SenseVoice 本地离线识别（中英日韩粤），把电台语音像歌词一样显示；全程不联网、不上传音频
@@ -93,20 +93,20 @@
 
 ## 下载
 
-Windows 和 Linux 现在放在**同一个发布页**，进去按系统挑就行：[v2.1.1 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.1.1)。
+Windows 和 Linux 现在放在**同一个发布页**，进去按系统挑就行：[v2.1.2 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.1.2)。
 
 ### Windows（10 / 11 x64）
 
-- **yiyunmusic-Setup-2.1.1.exe** —— 安装版（可自定义安装目录、自动创建快捷方式）
-- **yiyunmusic-portable-2.1.1.exe** —— 便携版，免安装，双击即用
+- **yiyunmusic-Setup-2.1.2.exe** —— 安装版（可自定义安装目录、自动创建快捷方式）
+- **yiyunmusic-portable-2.1.2.exe** —— 便携版，免安装，双击即用
 
 > 安装新版时会自动迁移旧版的登录态与个性化设置，无需重新扫码登录。登录凭证（Cookie）已加密存储，不再明文落盘。
 
 ### Linux（x64）
 
-- **yiyunmusic-2.1.1-x86_64.AppImage** —— Arch / 通用，`chmod +x` 后双击即可运行
-- **yiyunmusic-2.1.1-amd64.deb** —— Ubuntu / Debian，`sudo apt install ./yiyunmusic-2.1.1-amd64.deb`
-- **yiyunmusic-2.1.1-x64.tar.gz** —— 通用便携版，解压后运行 `./yiyunmusic`
+- **yiyunmusic-2.1.2-x86_64.AppImage** —— Arch / 通用，`chmod +x` 后双击即可运行
+- **yiyunmusic-2.1.2-amd64.deb** —— Ubuntu / Debian，`sudo apt install ./yiyunmusic-2.1.2-amd64.deb`
+- **yiyunmusic-2.1.2-x64.tar.gz** —— 通用便携版，解压后运行 `./yiyunmusic`
 
 ## 使用方法
 
