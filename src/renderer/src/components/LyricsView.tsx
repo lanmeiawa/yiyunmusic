@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useApp } from '../store'
-import { findActiveIndex, computeWordProgress } from '../utils/lrc'
+import { findActiveIndex, computeWordProgress, isLyricGap } from '../utils/lrc'
 import { coverUrl } from '../utils/cover'
 import NetImg from './NetImg'
 import { IconMusic, IconLyrics, IconComment } from './Icons'
@@ -73,11 +73,8 @@ export default function LyricsView() {
   const rawIdx = findActiveIndex(lyricLines, player.currentTime)
   const rawLine = rawIdx >= 0 ? lyricLines[rawIdx] : undefined
   const nextRaw = rawIdx + 1 < lyricLines.length ? lyricLines[rawIdx + 1] : undefined
-  // 当前句已唱完（逐字时间轴有真实结束时间）且离下一句还有明显空档 → 视为间奏，
-  // 暂时取消高亮，让等待时间有清晰的间隔，而不是一直挂着上一句。
-  const inGap = !!rawLine?.words?.length && !!rawLine.end &&
-    player.currentTime > rawLine.end + 0.6 &&
-    (!nextRaw || nextRaw.time - rawLine.end > 1.2)
+  // 一句唱完到下一句之间的明显空档 → 当作间奏，暂时取消高亮（普通 LRC 也能识别）
+  const inGap = isLyricGap(rawLine, nextRaw, player.currentTime)
   const activeIdx = inGap ? -1 : rawIdx
   const activeLine = activeIdx >= 0 ? lyricLines[activeIdx] : undefined
   const wp = computeWordProgress(activeLine, player.currentTime)
