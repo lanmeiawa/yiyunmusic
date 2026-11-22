@@ -12,7 +12,7 @@ import { IconMonitor } from './IconsExtra'
 export default function Sidebar() {
   const {
     profile, playlists, view, setView, openPlaylist, currentPlaylistId, logout,
-    t, accounts, switchAccount, removeAccount, openLogin, fmNext
+    t, accounts, switchAccount, removeAccount, openLogin, openFm
   } = useApp()
   const [accountOpen, setAccountOpen] = useState(false)
 
@@ -30,7 +30,7 @@ export default function Sidebar() {
         <div className="side-nav">
           {navItem(t('nav.discover'), <IconHome size={19} />, view === 'discover', () => setView('discover'))}
           {navItem(t('nav.lyrics'), <IconMusic size={19} />, view === 'lyrics', () => setView('lyrics'))}
-          {navItem(t('nav.fm'), <IconFM size={19} />, false, () => fmNext())}
+          {navItem(t('nav.fm'), <IconFM size={19} />, view === 'fm', () => openFm())}
           {navItem(t('nav.history'), <IconClock size={19} />, view === 'history', () => setView('history'))}
         </div>
       </div>
