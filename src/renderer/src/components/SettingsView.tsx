@@ -62,13 +62,28 @@ const PRESET_COLORS = [
 export default function SettingsView() {
   const { customization, setCustomization, chooseBg, bgData, theme, setTheme, setMessage, t } = useApp()
 
-  // 本地语音模型状态与下载进度
-  const [asrStatus, setAsrStatus] = useState<{ ready: boolean; size: number } | null>(null)
-  const [asrBusy, setAsrBusy] = useState(false)
+  // 本地语音模型：多模型列表 + 下载进度
+  type AsrModelRow = { id: string; name: string; tag: string; desc: string; approxMB: number; ready: boolean; size: number; active: boolean; downloading?: boolean }
+  const [asrStatus, setAsrStatus] = useState<{ ready: boolean; size: number; modelId?: string; name?: string } | null>(null)
+  const [asrModels, setAsrModels] = useState<AsrModelRow[]>([])
+  const [asrBusyId, setAsrBusyId] = useState('')
   const [asrPct, setAsrPct] = useState(0)
+  const refreshAsr = async () => {
+    const [list, st] = await Promise.all([
+      window.eApi.asrModels().catch(() => []),
+      window.eApi.asrStatus().catch(() => null)
+    ])
+    setAsrModels(Array.isArray(list) ? list : [])
+    setAsrStatus(st || { ready: false, size: 0 })
+  }
   useEffect(() => {
-    window.eApi.asrStatus().then(setAsrStatus).catch(() => setAsrStatus({ ready: false, size: 0 }))
-    return window.eApi.onAsrProgress((p) => setAsrPct(p.pct))
+    refreshAsr()
+    return window.eApi.onAsrProgress((p) => {
+      if (p.phase !== 'done') {
+        setAsrBusyId((p as any).modelId || '')
+        setAsrPct(p.pct)
+      }
+    })
   }, [])
   const [customColor, setCustomColor] = useState(customization.primary || '#ff6b8b')
   const [appNameDraft, setAppNameDraft] = useState(customization.appName || '')
@@ -349,43 +364,75 @@ export default function SettingsView() {
       <section className="settings-card">
         <h2>{t('settings.radioModel')}</h2>
         <p className="settings-desc">
-          离线语音识别模型（SenseVoice int8，约 230MB）。下载后可让在线收音机把正在播放的语音实时转成文字，像歌词一样显示。识别全程在本地完成，不联网、不上传音频。
+          离线语音识别，全程本地运行、不联网、不上传音频。可以同时安装多个模型随时切换：
+          中文内容优先选「中文专用」，需要标点和中英混说选「通用多语种」，低配电脑选「轻量快速」。
         </p>
-        <div className="settings-row">
-          {asrStatus?.ready ? (
-            <>
-              <span className="settings-chip sel">✓ {t('settings.radioModelDownloaded')}（{(asrStatus.size / 1048576).toFixed(0)} MB）</span>
-              <button className="settings-chip" onClick={async () => {
-                await window.eApi.asrDelete()
-                setAsrStatus({ ready: false, size: 0 })
-                await setCustomization({ radioTranscript: false })
-                setMessage('语音模型已删除')
-              }}>{t('settings.radioModelDelete')}</button>
-            </>
-          ) : (
-            <button
-              className="settings-chip sel"
-              disabled={asrBusy}
-              onClick={async () => {
-                setAsrBusy(true); setAsrPct(0)
-                setMessage('正在下载语音模型，请勿关闭应用…')
-                const r = await window.eApi.asrDownload().catch((e: any) => ({ ok: false, error: e?.message }))
-                setAsrBusy(false)
-                if (r?.ok) {
-                  setAsrStatus(await window.eApi.asrStatus())
-                  await setCustomization({ radioTranscript: true })
-                  setMessage('语音模型下载完成，可在收音机里开启实时转写')
-                } else {
-                  setMessage('模型下载失败：' + (r?.error || '网络异常'))
-                }
-              }}
-            >{asrBusy ? `${t('settings.radioModelDownloading')} ${(asrPct * 100).toFixed(0)}%` : t('settings.radioModelDownload')}</button>
-          )}
+        <div className="asr-models">
+          {asrModels.map((m) => {
+            const busy = asrBusyId === m.id || !!m.downloading
+            const anyBusy = !!asrBusyId || asrModels.some((x) => x.downloading)
+            return (
+              <div key={m.id} className={`asr-model ${m.active ? 'active' : ''} ${busy ? 'busy' : ''}`}>
+                <div className="asr-model-head">
+                  <b>{m.name}</b>
+                  <span className="asr-model-tag">{m.tag}</span>
+                  {m.active && <span className="asr-model-flag">使用中</span>}
+                  <span className="asr-model-size">{m.ready ? (m.size / 1048576).toFixed(0) : m.approxMB} MB</span>
+                </div>
+                <p className="asr-model-desc">{m.desc}</p>
+                <div className="asr-model-actions">
+                  {m.ready ? (
+                    <>
+                      <button
+                        className="settings-chip"
+                        disabled={m.active || anyBusy}
+                        onClick={async () => {
+                          const ok = await window.eApi.asrSetModel(m.id).catch(() => false)
+                          if (ok) { await refreshAsr(); setMessage(`已切换到「${m.name}」模型`) }
+                          else setMessage('切换模型失败')
+                        }}
+                      >{m.active ? '当前使用' : '使用此模型'}</button>
+                      <button
+                        className="settings-chip"
+                        disabled={anyBusy}
+                        onClick={async () => {
+                          await window.eApi.asrDelete(m.id).catch(() => false)
+                          await refreshAsr()
+                          if (m.active) await setCustomization({ radioTranscript: false })
+                          setMessage(`已删除「${m.name}」模型`)
+                        }}
+                      >{t('settings.radioModelDelete')}</button>
+                    </>
+                  ) : (
+                    <button
+                      className="settings-chip sel"
+                      disabled={anyBusy}
+                      onClick={async () => {
+                        setAsrBusyId(m.id); setAsrPct(0)
+                        setMessage(`正在下载「${m.name}」模型，请勿关闭应用…`)
+                        const r = await window.eApi.asrDownload(m.id).catch((e: any) => ({ ok: false, error: e?.message }))
+                        setAsrBusyId('')
+                        await refreshAsr()
+                        if (r?.ok) {
+                          const st = await window.eApi.asrStatus().catch(() => null)
+                          if (!st?.ready) await setCustomization({ radioTranscript: true })
+                          setMessage(`「${m.name}」下载完成，已设为当前模型`)
+                        } else {
+                          setMessage('模型下载失败：' + (r?.error || '网络异常'))
+                        }
+                      }}
+                    >{busy ? `${t('settings.radioModelDownloading')} ${(asrPct * 100).toFixed(0)}%` : t('settings.radioModelDownload')}</button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+          {asrModels.length === 0 && <div className="asr-model-empty">正在读取模型列表…</div>}
         </div>
         <label className="settings-switch-row">
           <span>
             <b>{t('radio.transcript')}</b>
-            <i>{asrStatus?.ready ? '收听电台时自动把语音转成文字' : t('radio.transcriptHint')}</i>
+            <i>{asrStatus?.ready ? `当前模型：${asrStatus.name || asrStatus.modelId}，收听电台时可实时转文字` : t('radio.transcriptHint')}</i>
           </span>
           <input
             type="checkbox"
