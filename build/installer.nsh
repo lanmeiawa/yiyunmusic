@@ -8,11 +8,11 @@
     "是否下载离线语音转文字模型（约 230MB）？$\r$\n$\r$\n是：首次启动时自动下载（多镜像、支持断点续传），开启收音机实时转文字$\r$\n否：跳过，之后可在设置里自行下载（适合网速慢或想节省空间）" \
     /SD IDNO IDYES asr_yes IDNO asr_no
   asr_yes:
-    CreateDirectory "$APPDATA\yiyunmusic\asr-model"
-    FileOpen $R8 "$APPDATA\yiyunmusic\asr-model\wanted" w
-    FileWrite $R8 "1"
+    CreateDirectory "$APPDATA\yiyunmusic\asr-models"
+    FileOpen $R8 "$APPDATA\yiyunmusic\asr-models\wanted" w
+    FileWrite $R8 "paraformer-zh"
     FileClose $R8
-    DetailPrint "已标记下载语音模型，首次启动时自动下载"
+    DetailPrint "已标记下载中文语音模型，首次启动时自动下载"
     Goto asr_done
   asr_no:
     DetailPrint "跳过语音模型，可在设置里后续下载"
