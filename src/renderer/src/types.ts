@@ -8,6 +8,39 @@ export interface Profile {
 
 export type ThemeName = 'light' | 'dark' | 'mitia' | 'custom' | 'retro'
 
+/** UI 布局：经典（左栏+主区+底栏）/ 沉浸（全屏歌词与可视化）/ 杂志（大封面卡片流） */
+export type LayoutName = 'classic' | 'immersive' | 'magazine'
+
+/** 视图名（含在线收音机，radio 为听书电台） */
+export type ViewName =
+  | 'discover' | 'playlist' | 'lyrics' | 'search' | 'history'
+  | 'settings' | 'radio' | 'profile' | 'local' | 'onlineRadio'
+
+/** 在线收音机频道（Radio Browser 数据源） */
+export interface RadioStation {
+  stationuuid: string
+  name: string
+  url: string
+  urlResolved: string
+  favicon: string
+  country: string
+  countryCode: string
+  state: string
+  language: string
+  tags: string[]
+  codec: string
+  bitrate: number
+  votes: number
+  clickCount: number
+}
+
+/** 收音机实时转写文本（像歌词一样逐条滚动） */
+export interface RadioTranscript {
+  id: number
+  text: string
+  time: number
+}
+
 /** 全局快捷键映射（Electron accelerator 格式） */
 export interface ShortcutMap {
   togglePlay: string
@@ -68,6 +101,12 @@ export interface Customization {
   language: 'zh' | 'en'
   /** 首次启动免责声明已确认 */
   disclaimerAccepted: boolean
+  /** UI 布局风格 */
+  layout: LayoutName
+  /** 收音机转写：是否启用本地语音识别 */
+  radioTranscript: boolean
+  /** 收音机转写：模型是否就绪（随安装包分发） */
+  radioModelReady?: boolean
 }
 
 export const DEFAULT_CUSTOMIZATION: Customization = {
@@ -95,7 +134,10 @@ export const DEFAULT_CUSTOMIZATION: Customization = {
   shortcuts: { ...DEFAULT_SHORTCUTS },
   searchHistory: [],
   language: 'zh',
-  disclaimerAccepted: false
+  disclaimerAccepted: false,
+  layout: 'classic',
+  radioTranscript: false,
+  radioModelReady: false
 }
 
 export interface DesktopLyricsSettings {
@@ -152,6 +194,8 @@ export interface Track {
   dj?: boolean
   /** 本地音乐文件（绝对路径，播放走 file:// 不走接口） */
   localPath?: string
+  /** 在线收音机流地址（无时长概念，播放走本地代理） */
+  streamUrl?: string
 }
 
 export interface WordToken {
