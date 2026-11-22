@@ -147,7 +147,12 @@ interface AppContextValue {
 
   // 私人FM
   fmMode: boolean
+  fmTracks: Track[]
+  fmLoading: boolean
   fmNext: () => Promise<void>
+  openFm: () => Promise<void>
+  loadFm: (append?: boolean) => Promise<Track[]>
+  playFmTrack: (track: Track) => Promise<void>
 
   // 热门评论（当前歌曲）
   comments: CommentItem[]
@@ -435,6 +440,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.setAttribute('data-layout', customization.layout || 'classic')
   }, [customization.layout])
 
+  // 开机自启：启动时同步一次系统登录项，之后随开关变化
+  useEffect(() => {
+    window.eApi.appAutoLaunch?.(!!customization.autoLaunch).catch(() => {})
+  }, [customization.autoLaunch])
+
   // 进入在线收音机：首次拉取列表与分类；查询条件变化时重新搜索
   useEffect(() => {
     if (view !== 'onlineRadio') return
@@ -697,29 +707,109 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [setMessage])
 
-  // ===== 私人FM =====
+  // ===== 私人FM：一次拉 50 首，列表展示，可整批播放 =====
   const [fmMode, setFmMode] = useState(false)
-  const fmNext = useCallback(async () => {
+  const [fmTracks, setFmTracks] = useState<Track[]>([])
+  const [fmLoading, setFmLoading] = useState(false)
+  const fmTracksRef = useRef<Track[]>([])
+  fmTracksRef.current = fmTracks
+  const fmIdsRef = useRef<Set<number>>(new Set())
+  const fmLoadingRef = useRef(false)
+  // playTrack 定义在后面，用 ref 打破闭包/依赖顺序问题
+  const playTrackRef = useRef<(t: Track, list?: Track[]) => Promise<void>>(async () => {})
+
+  const mapFmTrack = (t: any): Track => ({
+    id: t.id,
+    name: t.name,
+    artists: (t.artists || []).map((a: any) => ({ id: a.id, name: a.name })),
+    album: { id: t.album?.id || 0, name: t.album?.name || '', picUrl: t.album?.picUrl || '' },
+    duration: t.duration || 0,
+    fee: t.fee,
+    mv: t.mv,
+    alias: t.alias
+  })
+
+  /** 拉一批 FM 歌（append=true 时追加到已有列表后面） */
+  const loadFm = useCallback(async (append = false): Promise<Track[]> => {
+    if (fmLoadingRef.current) return fmTracksRef.current
+    fmLoadingRef.current = true
+    setFmLoading(true)
     try {
-      const res = await window.eApi.call('personal_fm', {})
-      const t = (res?.data || [])[0]
-      if (!t) { setMessage('私人FM暂无可播放歌曲'); setFmMode(false); return }
-      const track: Track = {
-        id: t.id, name: t.name,
-        artists: (t.artists || []).map((a: any) => ({ id: a.id, name: a.name })),
-        album: { id: t.album?.id || 0, name: t.album?.name || '', picUrl: t.album?.picUrl || '' },
-        duration: t.duration || 0, fee: t.fee, mv: t.mv, alias: t.alias
+      const base = append ? [...fmTracksRef.current] : []
+      const target = base.length + 50
+      let merged = base
+      let freshTotal = 0
+      let emptyStreak = 0
+      // 接口一次只给 3 首，分批拉：每批 12 首，先渲染出来再继续补到 50
+      for (let round = 0; round < 6 && merged.length < target; round++) {
+        const res: any = await window.eApi.fmBatch(12)
+        if (res && !Array.isArray(res) && res.error) {
+          if (!merged.length) setMessage('私人FM加载失败：' + res.error)
+          break
+        }
+        const list = Array.isArray(res) ? res : []
+        if (!list.length) break
+        const mapped = list.map(mapFmTrack).filter((t: Track) => t.id)
+        mapped.forEach((t: Track) => fmIdsRef.current.add(t.id))
+        const seen = new Set(merged.map((t) => t.id))
+        const fresh = mapped.filter((t) => !seen.has(t.id))
+        if (!fresh.length) { emptyStreak++; if (emptyStreak >= 2) break; continue }
+        emptyStreak = 0
+        freshTotal += fresh.length
+        merged = [...merged, ...fresh]
+        if (merged.length > target) merged = merged.slice(0, target)
+        setFmTracks(merged)
+        fmTracksRef.current = merged
       }
-      setFmMode(true)
-      // FM 歌累积进播放队列（可回听），播完 onEnded 自动拉下一首
-      const prev = playerRef.current.playlist.filter((t) => t.id !== track.id)
-      await playTrack(track, [...prev, track])
+      if (!merged.length) {
+        setMessage('私人FM暂时没有推荐，稍后再试试')
+        return fmTracksRef.current
+      }
+      if (freshTotal === 0) setMessage('暂时没有更多推荐，稍后再试')
+      return merged
     } catch (e: any) {
-      setMessage(e?.body?.message || '私人FM加载失败')
-      setFmMode(false)
+      setMessage(e?.body?.message || e?.message || '私人FM加载失败')
+      return fmTracksRef.current
+    } finally {
+      fmLoadingRef.current = false
+      setFmLoading(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setMessage])
+
+  /** 进入私人FM：切视图；没有列表就先拉 50 首 */
+  const openFm = useCallback(async () => {
+    setView('fm')
+    if (fmTracksRef.current.length) return
+    const list = await loadFm(false)
+    if (list.length) {
+      setFmMode(true)
+      await playTrackRef.current(list[0], list)
+    }
+  }, [loadFm])
+
+  /** 播放列表里的某一首 */
+  const playFmTrack = useCallback(async (track: Track) => {
+    setFmMode(true)
+    await playTrackRef.current(track, fmTracksRef.current)
+  }, [])
+
+  /** 下一首：列表到头就自动再拉一批 */
+  const fmNext = useCallback(async () => {
+    const list = fmTracksRef.current
+    const cur = playerRef.current.current
+    const idx = cur ? list.findIndex((t) => t.id === cur.id) : -1
+    let next = list[idx + 1]
+    let queue = list
+    if (!next) {
+      const before = list.length
+      queue = await loadFm(true)
+      next = queue[before] || queue[queue.length - 1]
+    }
+    if (!next) { setMessage('私人FM暂时没有更多歌曲'); setFmMode(false); return }
+    setFmMode(true)
+    await playTrackRef.current(next, queue)
+  }, [loadFm, setMessage])
+
   const fmModeRef = useRef(false)
   fmModeRef.current = fmMode
   const fmNextRef = useRef<() => void>(() => {})
@@ -1364,6 +1454,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     },
     [loadLyric, resolveAndPlay]
   )
+  // 供私人FM 等前置定义的逻辑复用
+  playTrackRef.current = playTrack
 
   const openLocalFiles = useCallback(async () => {
     try {
@@ -1834,7 +1926,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     const onPause = () => setPlayer((p) => ({ ...p, isPlaying: false }))
     const onEnded = () => {
-      if (fmModeRef.current) { fmNextRef.current(); return }
+      const curTrack = playerRef.current.current
+      if (curTrack && fmIdsRef.current.has(curTrack.id)) { fmNextRef.current(); return }
       const mode = playModeRef.current
       if (mode === 'single') {
         audio.currentTime = 0
@@ -1918,7 +2011,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     likedIds, toggleLike, isLiked, addToPlaylist, createPlaylist, deletePlaylist,
     batchDownload, batchLike, batchAddToPlaylist, batchRemoveFromPlaylist,
     downloadTrack, downloadDialog, confirmDownload, closeDownload,
-    fmMode, fmNext, comments, loadComments, postComment,
+    fmMode, fmTracks, fmLoading, fmNext, openFm, loadFm, playFmTrack, comments, loadComments, postComment,
     radioPrograms, radioLoading, loadRadio,
     radios, radiosLoading, loadRadios, loadRadioPrograms, activeRadio, setActiveRadio,
     radioCats, activeCat, setActiveCat, loadRadioCats,
