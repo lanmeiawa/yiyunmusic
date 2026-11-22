@@ -96,6 +96,8 @@ export interface Customization {
   radioTranscript?: boolean
   /** 收音机转写：模型是否就绪 */
   radioModelReady?: boolean
+  /** 开机自启 */
+  autoLaunch?: boolean
 }
 
 export const DEFAULT_CUSTOMIZATION: Customization = {
@@ -126,7 +128,8 @@ export const DEFAULT_CUSTOMIZATION: Customization = {
   disclaimerAccepted: false,
   layout: 'classic',
   radioTranscript: false,
-  radioModelReady: false
+  radioModelReady: false,
+  autoLaunch: false
 }
 
 /** 主窗口位置与大小记忆 */
