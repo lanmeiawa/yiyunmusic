@@ -164,6 +164,40 @@ export async function callApi(name: string, params: Record<string, any> = {}): P
   throw err
 }
 
+/**
+ * 私人 FM 批量拉取
+ * 接口每次只返回 3 首，limit 参数无效；并发请求会拿到同一批歌曲，
+ * 因此这里串行多次请求，按 id 去重后返回。
+ */
+export async function fetchFmBatch(limit = 50): Promise<any[]> {
+  const want = Math.max(1, Math.min(100, limit))
+  const out: any[] = []
+  const seen = new Set<number>()
+  const maxCalls = Math.ceil(want / 3) + 8
+  let emptyStreak = 0
+  for (let i = 0; i < maxCalls && out.length < want; i++) {
+    let list: any[] = []
+    try {
+      const res = await callApi('personal_fm')
+      list = Array.isArray(res?.data) ? res.data : []
+    } catch (e) {
+      if (!out.length) throw e
+      break
+    }
+    let added = 0
+    for (const t of list) {
+      if (!t?.id || seen.has(t.id)) continue
+      seen.add(t.id)
+      out.push(t)
+      added++
+      if (out.length >= want) break
+    }
+    emptyStreak = added === 0 ? emptyStreak + 1 : 0
+    if (emptyStreak >= 3) break
+  }
+  return out
+}
+
 /** 扫码登录：第一步，获取 unikey */
 export async function qrLoginKey() {
   const body = await callApi('login_qr_key')
