@@ -1262,3 +1262,61 @@
 .or-transcript-empty { color: var(--text-3); font-size: 12px; text-align: center; margin: 0; }
 .or-transcript-line { margin: 0 0 8px; font-size: 13px; line-height: 1.7; color: var(--text); }
 .or-transcript-line:last-child { color: var(--primary); font-weight: 600; }
+
+/* ==================== 私人 FM ==================== */
+.fm-view { padding: 26px 34px 40px; }
+.fm-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; margin-bottom: 18px; flex-wrap: wrap;
+}
+.fm-hero { display: flex; align-items: center; gap: 14px; }
+.fm-logo {
+  width: 52px; height: 52px; border-radius: 16px; flex-shrink: 0;
+  background: var(--primary-gradient); color: #fff; display: grid; place-items: center;
+  box-shadow: var(--shadow-primary);
+}
+.fm-hero h1 { font-size: 22px; font-weight: 800; }
+.fm-hero p { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+.fm-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.fm-actions .settings-chip { display: inline-flex; align-items: center; gap: 5px; }
+.fm-list { display: flex; flex-direction: column; gap: 2px; }
+.fm-row {
+  display: grid; grid-template-columns: 42px minmax(0, 2.2fr) minmax(0, 1.2fr) 62px 30px;
+  align-items: center; gap: 12px; min-height: 56px; padding: 4px 10px;
+  border-radius: 10px; font-size: 13px; transition: background 0.15s;
+}
+.fm-row:hover { background: var(--bg-body); }
+.fm-row.current { background: var(--primary-tint); }
+.fm-row.current .fm-track-name { color: var(--primary); }
+.fm-col-index {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  color: var(--text-3); font-size: 12px;
+}
+.fm-row-play { display: none; color: var(--primary); align-items: center; justify-content: center; }
+.fm-row:hover .index-num { display: none; }
+.fm-row:hover .fm-row-play { display: flex; }
+.fm-col-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.fm-cover { width: 38px; height: 38px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+.fm-cover.empty { display: grid; place-items: center; background: var(--cover-grad); color: #fff; }
+.fm-title-meta { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.fm-track-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.fm-track-artists { color: var(--text-3); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.fm-col-album { color: var(--text-2); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fm-col-time { color: var(--text-3); font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+.fm-row-play-end { color: var(--text-3); opacity: 0; display: grid; place-items: center; }
+.fm-row:hover .fm-row-play-end { opacity: 1; }
+.fm-row-play-end:hover { color: var(--primary); }
+.fm-more {
+  margin-top: 12px; height: 40px; border-radius: 10px;
+  border: 1px dashed var(--border); color: var(--text-3); font-size: 12.5px; transition: 0.16s;
+}
+.fm-more:hover { color: var(--primary); border-color: var(--primary); }
+.fm-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 60px 0; color: var(--text-3); font-size: 13px; }
+.fm-skeleton { display: flex; flex-direction: column; gap: 8px; }
+.fm-tip { margin-top: 14px; font-size: 11.5px; color: var(--text-3); }
+
+@media (max-width: 960px) {
+  .fm-row { grid-template-columns: 36px minmax(0, 1fr) 56px 28px; }
+  .fm-col-album { display: none; }
+  .fm-view { padding: 20px 18px 32px; }
+}
