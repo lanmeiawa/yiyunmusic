@@ -730,12 +730,13 @@ html[data-layout="immersive"] .sidebar .nav-item {
   border-radius: 14px;
 }
 html[data-layout="immersive"] .sidebar .side-nav { gap: 8px; }
+/* 注意：各视图根节点自带内边距（36px 左右），这里只做居中限宽，
+   不能再给 .content 叠加 padding —— 否则底部会多出一条 100px+ 的死空白 */
 html[data-layout="immersive"] .content {
-  background: transparent;
-  padding: 30px clamp(24px, 8vw, 140px) 120px;
+  padding: 0;
 }
-html[data-layout="immersive"] .content > * {
-  max-width: 1100px; margin-left: auto; margin-right: auto;
+html[data-layout="immersive"] .content > :is(.discover, .playlist-view, .search-view, .settings-view, .radio-view, .profile-view, .online-radio-view) {
+  max-width: 1180px; margin-left: auto; margin-right: auto; width: 100%;
 }
 html[data-layout="immersive"] .playerbar {
   background: color-mix(in srgb, var(--card) 82%, transparent);
@@ -774,7 +775,7 @@ html[data-layout="magazine"] .sidebar .nav-item {
   white-space: nowrap;
 }
 html[data-layout="magazine"] .content {
-  padding: 26px clamp(20px, 6vw, 90px) 130px;
+  padding: 0;
 }
 html[data-layout="magazine"] .playlist-grid,
 html[data-layout="magazine"] .or-grid,
