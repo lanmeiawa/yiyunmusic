@@ -191,6 +191,8 @@ interface AppContextValue {
 
   // 搜索
   searchKeyword: string
+  searchExtraLoading: string
+  loadSearchSection: (kind: 'albums' | 'shows' | 'lyrics') => Promise<void>
   searchResults: { songs: Track[]; playlists: Playlist[]; shows?: Track[]; albums?: any[]; artists?: any[]; lyricHits?: LyricSearchItem[] }
   searching: boolean
   searchError: string
@@ -207,6 +209,19 @@ interface AppContextValue {
   searchHistory: string[]
   clearSearchHistory: () => void
   removeSearchHistory: (kw: string) => void
+}
+
+/** 把网络层的技术错误翻成人话，避免界面上出现 TypeError: terminated 这类字符串 */
+function friendlyNetError(msg: string): string {
+  const m = String(msg || '')
+  if (!m) return ''
+  if (/terminated|premature|socket hang up|econnreset|aborted|body stream|other side closed/i.test(m)) {
+    return '网络连接中断，请稍后重试'
+  }
+  if (/操作频繁|请求过于频繁|too many requests|rate limit/i.test(m)) {
+    return '搜索有点频繁，等几秒再试'
+  }
+  return m
 }
 
 const Ctx = createContext<AppContextValue>(null as any)
@@ -274,6 +289,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     songs: [], playlists: []
   })
   const [searching, setSearching] = useState(false)
+  // 搜索补充分区（专辑/听书/歌词）按需加载
+  const [searchExtraLoading, setSearchExtraLoading] = useState('')
+  const searchKeywordRef = useRef('')
+  searchKeywordRef.current = searchKeyword
+  const searchExtraRef = useRef<{ kw: string; loaded: Set<string> }>({ kw: '', loaded: new Set() })
   const [historyTracks, setHistoryTracks] = useState<Track[]>([])
   const [customization, setCustomizationState] = useState<Customization>(DEFAULT_CUSTOMIZATION)
   // 多语言
@@ -1744,7 +1764,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       })
       setSearchResults({ songs, playlists, shows, albums, artists, lyricHits })
       if (!songs.length && !playlists.length && !shows.length && !albums.length && !artists.length && !lyricHits.length) {
-        setSearchError(apiError || '没有找到相关内容，换个关键词试试')
+        setSearchError(friendlyNetError(apiError) || '没有找到相关内容，换个关键词试试')
       }
       // search 接口不再返回封面 picUrl：批量 song_detail 补全
       const ids = songs.map((s) => s.id).join(',')
@@ -1763,12 +1783,71 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e: any) {
       console.error('搜索失败', e)
-      setSearchError('搜索失败：' + (e?.body?.message || e?.message || '网络错误'))
+      setSearchError('搜索失败：' + friendlyNetError(e?.body?.message || e?.message || '网络错误'))
       setSearchResults({ songs: [], playlists: [], shows: [], albums: [], artists: [], lyricHits: [] })
     } finally {
       setSearching(false)
     }
   }, [setCustomization])
+
+  /** 搜索补充分区：专辑 / 听书 / 歌词，点开对应标签时才请求 */
+  const loadSearchSection = useCallback(async (kind: 'albums' | 'shows' | 'lyrics') => {
+    const kw = searchKeywordRef.current
+    if (!kw) return
+    if (searchExtraRef.current.kw !== kw) searchExtraRef.current = { kw, loaded: new Set() }
+    if (searchExtraRef.current.loaded.has(kind)) return
+    searchExtraRef.current.loaded.add(kind)
+    setSearchExtraLoading(kind)
+    try {
+      const res: any = await window.eApi.searchSection(kw, kind)
+      if (res && !Array.isArray(res) && res.error) {
+        searchExtraRef.current.loaded.delete(kind)
+        setMessage(friendlyNetError(res.error))
+        return
+      }
+      const list: any[] = Array.isArray(res) ? res : []
+      if (kind === 'albums') {
+        const albums = list.map((x: any) => ({ id: x.id, name: x.name, coverImgUrl: x.picUrl, artist: x.artist?.name || '', size: x.size || 0 }))
+        setSearchResults((prev) => (prev ? { ...prev, albums } : prev))
+      } else if (kind === 'shows') {
+        const shows: Track[] = []
+        for (const show of list) {
+          const ms = show.mainSong || {}
+          if (!ms.id) continue
+          shows.push({
+            id: ms.id, name: show.name || ms.name || '',
+            artists: [{ id: 0, name: show.dj?.nickname || show.radio?.name || '电台节目' }],
+            album: { id: show.radio?.id || 0, name: show.radio?.name || '', picUrl: show.coverUrl || ms.picUrl || '' },
+            duration: show.duration || ms.duration || 0, fee: ms.fee || 0, mv: 0,
+            alias: show.radio?.name ? [show.radio.name] : [], dj: true
+          })
+        }
+        setSearchResults((prev) => (prev ? { ...prev, shows } : prev))
+      } else {
+        const lyricHits: LyricSearchItem[] = list.map((s: any) => {
+          const rawLyric = s.lyrics?.txt || s.lyrics?.lyric || s.lyric || s.lyrics || ''
+          const lines: string[] = String(typeof rawLyric === 'string' ? rawLyric : rawLyric?.txt || '')
+            .split('\n')
+            .map((l: string) => l.replace(/^\[[^\]]*\]/, '').trim())
+            .filter((l: string) => l && !/^by:/i.test(l))
+          const hit = lines.findIndex((l) => l.includes(kw))
+          const picked = lines.slice(hit >= 0 ? hit : 0, (hit >= 0 ? hit : 0) + 2).join(' / ')
+          return {
+            id: s.id,
+            name: s.name || '',
+            artists: (s.artists || s.ar || []).map((a: any) => a.name).join(' / '),
+            snippet: picked.length > 90 ? picked.slice(0, 90) + '…' : picked
+          }
+        })
+        setSearchResults((prev) => (prev ? { ...prev, lyricHits } : prev))
+      }
+    } catch (e: any) {
+      searchExtraRef.current.loaded.delete(kind)
+      setMessage(friendlyNetError(e?.message || '') || '加载失败')
+    } finally {
+      setSearchExtraLoading('')
+    }
+  }, [setMessage])
 
   // 搜索历史（持久化在个性化配置）
   const searchHistory = customization.searchHistory || []
@@ -2009,7 +2088,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     immersive, setImmersive,
     theme, setTheme,
     desktopLyrics, toggleDesktopLyrics, updateDesktopLyrics,
-    searchKeyword, searchResults, searching, searchError, doSearch,
+    searchKeyword, searchExtraLoading, loadSearchSection, searchResults, searching, searchError, doSearch,
     searchHistory, clearSearchHistory, removeSearchHistory,
     accounts, switchAccount, removeAccount, refreshAccounts, locale, t,
     historyTracks, loadHistory,
