@@ -243,6 +243,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [playlistName, setPlaylistName] = useState('')
   const [playlistLoading, setPlaylistLoading] = useState(false)
   const [lyricLines, setLyricLines] = useState<LyricLine[]>([])
+  // 歌词请求序号：只接受最后一次请求的结果（防止快速切歌时旧歌词覆盖新歌词）
+  const lyricSeqRef = useRef(0)
   const [songUrlLoading, setSongUrlLoading] = useState(false)
   const [message, setMessageState] = useState('')
   const [view, setView] = useState<'discover' | 'playlist' | 'lyrics' | 'search' | 'history' | 'settings' | 'radio' | 'profile' | 'local' | 'onlineRadio'>('discover')
@@ -1341,14 +1343,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [refreshAccounts, setMessage])
 
   const loadLyric = useCallback(async (id: number) => {
+    // 切歌很快时，旧请求可能后返回并覆盖新歌歌词 → 用序号丢弃过期响应
+    const seq = ++lyricSeqRef.current
     try {
       const res = await window.eApi.call('lyric', { id })
+      if (seq !== lyricSeqRef.current) return
       const lrc = res?.lrc?.lyric || ''
       const trans = res?.tlyric?.lyric || ''
       const klyric = res?.klyric?.lyric || ''
       setLyricLines(parseLyric(lrc, trans, klyric))
     } catch {
-      setLyricLines([])
+      if (seq === lyricSeqRef.current) setLyricLines([])
     }
   }, [])
 
@@ -1390,6 +1395,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setCurrentQuality('本地')
         setCurrentQualityInfo(null)
         setSongUrlLoading(false)
+        lyricSeqRef.current++ // 本地歌词优先，丢弃可能在途的在线歌词
         setLyricLines(meta?.lyric ? parseLyric(meta.lyric, '', '') : [])
         return
       }
