@@ -141,9 +141,17 @@ export function startPcmCapture(seconds: number, cb: (pcm: Float32Array) => void
     captureNode = ctx.createScriptProcessor(4096, 1, 1)
     captureNode.onaudioprocess = (e) => {
       const input = e.inputBuffer.getChannelData(0)
-      // 重采样到 16k：按 ctx.sampleRate / 16000 步进取样
-      const step = (ctx?.sampleRate || 44100) / CAPTURE_RATE
-      for (let i = 0; i < input.length; i += step) captureBuffer.push(input[Math.floor(i)])
+      // 重采样到 16k：按窗口做均值抽取（相当于简易低通），比直接抽点少很多混叠
+      const ratio = (ctx?.sampleRate || 44100) / CAPTURE_RATE
+      let pos = 0
+      while (pos + ratio <= input.length) {
+        const start = Math.floor(pos)
+        const end = Math.max(start + 1, Math.floor(pos + ratio))
+        let sum = 0
+        for (let j = start; j < end; j++) sum += input[j]
+        captureBuffer.push(sum / (end - start))
+        pos += ratio
+      }
       // 静音跳过：避免把纯静音喂给识别器
       if (captureBuffer.length >= seconds * CAPTURE_RATE) {
         const peak = captureBuffer.reduce((m, v) => Math.max(m, Math.abs(v)), 0)
