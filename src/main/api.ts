@@ -114,7 +114,23 @@ function normalizeParams(name: string, params: Record<string, any>): Record<stri
 /** 是否可安全重试：仅对网络/超时类错误重试；业务错误（参数错、未登录、不存在等）不重试 */
 function isRetryable(e: any): boolean {
   const msg = String(e?.body?.msg || e?.body?.message || e?.message || e?.code || '')
-  return /timeout|timed out|network error|econnreset|econnrefused|enotfound|eai_again|socket hang up|aborted|exceeded|connect/i.test(msg)
+  // terminated / premature close：连接被对端提前关闭（fetch/undici 的典型报错），重试通常能成功
+  return /timeout|timed out|network error|econnreset|econnrefused|enotfound|eai_again|socket hang up|aborted|exceeded|connect|terminated|premature|other side closed|body stream/i.test(msg)
+}
+
+/** 网易云的限频错误（code 405 / 操作频繁） */
+function isRateLimited(e: any): boolean {
+  const code = e?.body?.code ?? e?.code
+  const msg = String(e?.body?.message || e?.body?.msg || e?.message || '')
+  return code === 405 || /操作频繁|请求过于频繁|too many requests|rate limit/i.test(msg)
+}
+
+/** 搜索类请求最小间隔：并发/连发会直接被判「操作频繁」 */
+let lastSearchAt = 0
+async function throttleSearch(minGap = 320) {
+  const wait = lastSearchAt + minGap - Date.now()
+  if (wait > 0) await sleep(wait)
+  lastSearchAt = Date.now()
 }
 
 const DEFAULT_TIMEOUT = 15000
@@ -132,6 +148,8 @@ export async function callApi(name: string, params: Record<string, any> = {}): P
   const fn = apiMap[name]
   if (!fn) throw new Error(`未知接口: ${name}`)
 
+  // 搜索类接口统一节流，避免并发/连发被判定「操作频繁」
+  if (/^(search|cloudsearch|search_suggest)/.test(name)) await throttleSearch()
   const merged = normalizeParams(name, params)
   const cookie = getCookie()
   if (cookie && merged.cookie === undefined) merged.cookie = cookie
@@ -149,6 +167,11 @@ export async function callApi(name: string, params: Record<string, any> = {}): P
       return res?.body ?? res
     } catch (e: any) {
       lastErr = e
+      // 被判定「操作频繁」时不要继续重试（越试越糟），记一个冷却时间直接失败
+      if (isRateLimited(e)) {
+        rateLimitedUntil = Date.now() + 20000
+        break
+      }
       if (attempt >= RETRY_LIMIT || !isRetryable(e)) break
       console.warn(`[api] ${name} 调用失败，第 ${attempt + 1} 次重试:`, e?.body?.message || e?.body?.msg || e?.message || e)
       await sleep(400 * (attempt + 1))
@@ -463,90 +486,90 @@ export interface SmartSearchResult {
   error?: string
 }
 
+/** 搜索限频冷却：被网易云判定「操作频繁」后，先歇一会儿再请求，避免越试越糟 */
+let rateLimitedUntil = 0
+function rateLimitLeft(): number {
+  return Math.max(0, rateLimitedUntil - Date.now())
+}
+
+/** 搜索结果缓存（5 分钟），重复搜索不再打接口 */
+const SEARCH_TTL = 5 * 60 * 1000
+const searchCache = new Map<string, { at: number; data: SmartSearchResult }>()
+
 /**
- * 多级兜底搜索：
- * 1) cloudsearch 综合（一次拿单曲/歌单/专辑/歌手，最稳）
- * 2) 旧 search 分类型并行（各自失败互不影响）
- * 3) search_suggest 建议词重搜
- * 只有多数接口都报错才返回 error；接口正常但结果为空属于「没有找到」。
+ * 搜索：
+ * 1) 云搜索按有效类型逐个取（1 单曲 / 1000 歌单 / 100 歌手 / 10 专辑）
+ *    注意：type 1018 是无效类型，会返回空对象，千万别用
+ * 2) 听书 / 歌词用旧 search 接口补（返回结构不同）
+ * 3) 全部串行 + 320ms 间隔，避免并发触发「操作频繁」
+ * 4) 命中限频则冷却 20 秒，期间直接给提示，不再打接口
  */
 export async function smartSearch(keyword: string): Promise<SmartSearchResult> {
   const kw = keyword.trim()
   const out: SmartSearchResult = { songs: [], playlists: [], albums: [], artists: [], shows: [], lyricSongs: [], via: '' }
-  let failures = 0
+  if (!kw) return out
 
-  const extras = async (k: string) => {
-    const [dj, ly] = await Promise.all([
-      callApi('search', { keywords: k, type: 1009, limit: 20, offset: 0 }).catch(() => null),
-      callApi('search', { keywords: k, type: 1006, limit: 20, offset: 0 }).catch(() => null)
-    ])
-    out.shows = dj?.result?.shows || dj?.result?.programList || []
-    out.lyricSongs = ly?.result?.songs || []
+  const cached = searchCache.get(kw)
+  if (cached && Date.now() - cached.at < SEARCH_TTL) {
+    return { ...cached.data, via: 'cache' }
   }
 
-  const hasAny = () => out.songs.length + out.playlists.length + out.albums.length + out.artists.length > 0
-
-  // 1) 云搜索综合
-  try {
-    const body = await callApi('cloudsearch', { keywords: kw, type: 1018, limit: 60, offset: 0 })
-    const r = body?.result || {}
-    out.songs = r.songs || []
-    out.playlists = r.playlists || []
-    out.albums = r.albums || []
-    out.artists = r.artists || []
-    if (hasAny()) {
-      out.via = 'cloudsearch'
-      await extras(kw)
-      return out
-    }
-  } catch (e: any) {
-    failures++
-    console.warn('[search] 云搜索失败，尝试旧接口:', e?.message || e)
-  }
-
-  // 2) 旧搜索分类型并行
-  const tasks = [
-    callApi('search', { keywords: kw, type: 1, limit: 60, offset: 0 }),
-    callApi('search', { keywords: kw, type: 1000, limit: 30, offset: 0 }),
-    callApi('search', { keywords: kw, type: 1009, limit: 20, offset: 0 }),
-    callApi('search', { keywords: kw, type: 10, limit: 12, offset: 0 }),
-    callApi('search', { keywords: kw, type: 100, limit: 12, offset: 0 }),
-    callApi('search', { keywords: kw, type: 1006, limit: 20, offset: 0 })
-  ]
-  const [s, p, dj, al, ar, ly] = await Promise.all(tasks.map((t) => t.catch(() => { failures++; return null })))
-  out.songs = s?.result?.songs || []
-  out.playlists = p?.result?.playlists || []
-  out.shows = dj?.result?.shows || dj?.result?.programList || []
-  out.albums = al?.result?.albums || []
-  out.artists = ar?.result?.artists || []
-  out.lyricSongs = ly?.result?.songs || []
-  if (hasAny() || out.shows.length || out.lyricSongs.length) {
-    out.via = 'search'
+  const left = rateLimitLeft()
+  if (left > 0) {
+    out.error = `搜索有点频繁，等 ${Math.ceil(left / 1000)} 秒再试`
     return out
   }
 
-  // 3) 建议词重搜（处理生僻词/错别字）
+  let failures = 0
+  // 只发 3 个请求：单曲 / 歌单 / 歌手；专辑、听书、歌词等点开对应分类时再加载
   try {
-    const sug = await callApi('search_suggest', { keywords: kw })
-    const alt = (sug?.result?.allMatch?.[0]?.keyword || sug?.result?.songs?.[0]?.name || '').trim()
-    if (alt && alt !== kw) {
-      const body = await callApi('cloudsearch', { keywords: alt, type: 1018, limit: 60, offset: 0 })
-      const r = body?.result || {}
-      out.songs = r.songs || []
-      out.playlists = r.playlists || []
-      out.albums = r.albums || []
-      out.artists = r.artists || []
-      if (hasAny()) {
-        out.via = `suggest:${alt}`
-        await extras(alt)
-        return out
-      }
-    }
-  } catch (e: any) {
+    const body = await callApi('cloudsearch', { keywords: kw, type: 1, limit: 60, offset: 0 })
+    out.songs = body?.result?.songs || []
+  } catch {
     failures++
-    console.warn('[search] 建议词重搜失败:', e?.message || e)
+    try {
+      const body = await callApi('search', { keywords: kw, type: 1, limit: 60, offset: 0 })
+      out.songs = body?.result?.songs || []
+    } catch { failures++ }
   }
+  try {
+    const body = await callApi('cloudsearch', { keywords: kw, type: 1000, limit: 30, offset: 0 })
+    out.playlists = body?.result?.playlists || []
+  } catch { failures++ }
+  try {
+    const body = await callApi('cloudsearch', { keywords: kw, type: 100, limit: 12, offset: 0 })
+    out.artists = body?.result?.artists || []
+  } catch { failures++ }
 
-  if (failures >= 6) out.error = '搜索服务暂时不可用，请稍后重试'
+  out.via = 'cloudsearch'
+  if (out.songs.length || out.playlists.length || out.artists.length) {
+    if (searchCache.size > 60) searchCache.clear()
+    searchCache.set(kw, { at: Date.now(), data: out })
+  } else if (failures >= 2) {
+    out.error = rateLimitLeft() > 0 ? '搜索有点频繁，等几秒再试' : '搜索暂时没有响应，请稍后重试'
+  }
   return out
+}
+
+/**
+ * 搜索结果的补充分区（点开对应标签时再加载）：
+ * - albums：云搜索 type 10
+ * - shows：旧 search type 1009
+ * - lyrics：旧 search type 1006
+ */
+export async function searchSection(keyword: string, kind: 'albums' | 'shows' | 'lyrics'): Promise<any[]> {
+  const kw = keyword.trim()
+  if (!kw) return []
+  const left = rateLimitLeft()
+  if (left > 0) throw new Error(`搜索有点频繁，等 ${Math.ceil(left / 1000)} 秒再试`)
+  if (kind === 'albums') {
+    const body = await callApi('cloudsearch', { keywords: kw, type: 10, limit: 12, offset: 0 })
+    return body?.result?.albums || []
+  }
+  if (kind === 'shows') {
+    const body = await callApi('search', { keywords: kw, type: 1009, limit: 20, offset: 0 })
+    return body?.result?.shows || body?.result?.programList || body?.result?.djRadios || []
+  }
+  const body = await callApi('search', { keywords: kw, type: 1006, limit: 20, offset: 0 })
+  return body?.result?.songs || []
 }
