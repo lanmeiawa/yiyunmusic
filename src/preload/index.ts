@@ -81,6 +81,10 @@ const api = {
   customSet: (patch: Record<string, any>) => ipcRenderer.invoke('custom:set', patch),
   // 快捷键即时应用，返回注册失败的动作名数组
   shortcutsApply: () => ipcRenderer.invoke('shortcuts:apply'),
+  // 开机自启
+  appAutoLaunch: (on: boolean) => ipcRenderer.invoke('app:auto-launch', !!on),
+  // 私人 FM 批量（接口每次 3 首，主进程聚合成 N 首）
+  fmBatch: (limit?: number) => ipcRenderer.invoke('fm:batch', limit),
 
   // 下载
   downloadSelectDir: () => ipcRenderer.invoke('download:select-dir'),
