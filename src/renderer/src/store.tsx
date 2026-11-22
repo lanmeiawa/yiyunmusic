@@ -1140,6 +1140,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setQualityState(level)
     qualityRef.current = level
     window.eApi.store.setQuality(level).catch(() => {})
+    // 立即把右下角音质标签更新到所选档位，避免异步解析期间（或解析失败时）
+    // 标签停留在旧音质。接口若实际降级，resolveAndPlay 成功后会再修正为真实档位。
+    setCurrentQuality((prev) => (prev === '本地' ? prev : level.toUpperCase()))
+    setCurrentQualityInfo((prev) => (prev ? { ...prev, level } : prev))
     const cur = playerRef.current.current
     if (cur && audio) {
       resolveAndPlay(cur, playerRef.current.isPlaying, true)
