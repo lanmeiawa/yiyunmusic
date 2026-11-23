@@ -6,18 +6,18 @@ A third-party NetEase Cloud Music desktop client built with **Electron + React +
 
 ## Download
 
-Windows and Linux builds are published in the **same release page** — pick the one for your system: [v2.2.5 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.2.5).
+Windows and Linux builds are published in the **same release page** — pick the one for your system: [v2.2.6 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.2.6).
 
 **Windows 10 / 11 x64**
-- **yiyunmusic-Setup-2.2.5.exe** — installer (custom directory, desktop shortcut)
-- **yiyunmusic-portable-2.2.5.exe** — portable, no installation required
+- **yiyunmusic-Setup-2.2.6.exe** — installer (custom directory, desktop shortcut)
+- **yiyunmusic-portable-2.2.6.exe** — portable, no installation required
 
 **Linux x64**
-- **yiyunmusic-2.2.5-x86_64.AppImage** — universal (Arch / Ubuntu), `chmod +x` then run
-- **yiyunmusic-2.2.5-amd64.deb** — Ubuntu / Debian, `sudo apt install ./yiyunmusic-2.2.5-amd64.deb`
-- **yiyunmusic-2.2.5-x64.tar.gz** — portable tarball, extract and run `./yiyunmusic`
+- **yiyunmusic-2.2.6-x86_64.AppImage** — universal (Arch / Ubuntu), `chmod +x` then run
+- **yiyunmusic-2.2.6-amd64.deb** — Ubuntu / Debian, `sudo apt install ./yiyunmusic-2.2.6-amd64.deb`
+- **yiyunmusic-2.2.6-x64.tar.gz** — portable tarball, extract and run `./yiyunmusic`
 
-> Since v2.2.5 the login cookie is encrypted at rest instead of being stored as plain text in the config file.
+> Since v2.2.6 the login cookie is encrypted at rest instead of being stored as plain text in the config file.
 
 ## Code signing
 
