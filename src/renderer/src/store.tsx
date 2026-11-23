@@ -452,11 +452,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [customization, bgData, theme])
 
-  // 侧边栏折叠
-  useEffect(() => {
-    document.documentElement.classList.toggle('sidebar-collapsed', customization.sidebarCollapsed)
-  }, [customization.sidebarCollapsed])
-
   // UI 布局（经典 / 沉浸 / 杂志）→ data-layout 属性驱动 CSS
   useEffect(() => {
     document.documentElement.setAttribute('data-layout', customization.layout || 'classic')
