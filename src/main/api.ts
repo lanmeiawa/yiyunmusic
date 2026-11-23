@@ -41,7 +41,7 @@ import {
   comment_hot,
   comment_music
 } from 'NeteaseCloudMusicApi'
-import { getCookie, mergeCookie, setCookie, setProfile, pushHistory, upsertAccount, getAccounts, setActiveAccountId } from './store'
+import { getCookie, mergeCookie, setCookie, setProfile, pushHistory, upsertAccount, getAccounts, setActiveAccountId, getStore } from './store'
 
 type ApiFn = (params: Record<string, any>) => Promise<any>
 
@@ -137,6 +137,109 @@ const DEFAULT_TIMEOUT = 15000
 const RETRY_LIMIT = 2
 
 /**
+ * 多线路保险（第一层）：按请求指定官方入口，网络层失败时依次换线路重试。
+ * 库本身把域名在加载时就固化了，不能再改全局配置；但 createOption() 支持
+ * 用 domain 参数覆盖（只允许 *.163.com），所以这里逐请求切换。
+ * 三个域名实测搜索 / 歌词 / 音源都能正常返回。
+ */
+const HOSTS = [
+  'https://interface.music.163.com',
+  'https://interface3.music.163.com',
+  'https://music.163.com'
+]
+/** 最近一次成功的线路（5 分钟内复用） */
+let preferredHost = ''
+let preferredUntil = 0
+
+/**
+ * 多线路保险（第二层）：自建/自部署的 NeteaseCloudMusicApi 服务。
+ * 内置库彻底失效（例如网易云改了加密、库版本落后）时，直接把同样的调用转到这个地址。
+ * 路由规则与服务端一致：文件名下划线转斜杠，例：song_url_v1 → /song/url/v1。
+ */
+const SPECIAL_ROUTES: Record<string, string> = {
+  daily_signin: '/daily_signin',
+  fm_trash: '/fm_trash',
+  personal_fm: '/personal_fm'
+}
+function backupBase(): string {
+  const raw = String(getStore().customization.apiBackupUrl || '').trim()
+  if (!/^https?:\/\/[^\s]+$/i.test(raw)) return ''
+  return raw.replace(/\/+$/, '')
+}
+function backupRoute(name: string): string {
+  return SPECIAL_ROUTES[name] || '/' + name.replace(/_/g, '/')
+}
+function isServerSideError(e: any): boolean {
+  const status = Number(e?.status || e?.response?.status || 0)
+  return status >= 500
+}
+
+/** 走备用服务调用同一接口，返回结构（body）与内置一致 */
+async function callViaBackup(name: string, params: Record<string, any>): Promise<any> {
+  const base = backupBase()
+  if (!base) throw new Error('未配置备用接口地址')
+  const qs = new URLSearchParams()
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined || v === null || k === 'timeout' || k === 'domain') continue
+    qs.set(k, typeof v === 'object' ? JSON.stringify(v) : String(v))
+  }
+  const cookie = getCookie()
+  if (cookie && !qs.has('cookie')) qs.set('cookie', cookie)
+  const res = await fetch(`${base}${backupRoute(name)}?${qs.toString()}`, {
+    signal: AbortSignal.timeout(DEFAULT_TIMEOUT)
+  })
+  const text = await res.text()
+  let body: any
+  try {
+    body = JSON.parse(text)
+  } catch {
+    throw new Error(`备用接口返回异常（HTTP ${res.status}）`)
+  }
+  if (!res.ok && body?.code === undefined) throw new Error(`备用接口 HTTP ${res.status}`)
+  return body
+}
+
+/** 线路体检：内置线路 + 备用线路各打一次搜索接口 */
+export async function checkApiHealth(): Promise<any> {
+  const out: any = {
+    builtin: { ok: false, ms: 0, error: '', lines: HOSTS.length },
+    backup: { ok: false, ms: 0, error: '', url: backupBase() }
+  }
+  const t0 = Date.now()
+  try {
+    const fn = apiMap['cloudsearch']
+    let via = ''
+    for (let i = 0; i < HOSTS.length; i++) {
+      const params: any = { keywords: 'yiyun', type: 1, limit: 1, offset: 0, cookie: getCookie(), timeout: 8000 }
+      if (i > 0) params.domain = HOSTS[i]
+      try {
+        const res: any = await fn(params)
+        const body = res?.body ?? res
+        if (body?.code === 200 || Array.isArray(body?.result?.songs)) { via = i === 0 ? '默认' : `线路 ${i + 1}`; break }
+      } catch { /* 试下一条 */ }
+    }
+    out.builtin.ok = !!via
+    out.builtin.via = via
+    out.builtin.error = via ? '' : '三条线路都不通'
+  } catch (e: any) {
+    out.builtin.error = e?.body?.message || e?.message || '连接失败'
+  }
+  out.builtin.ms = Date.now() - t0
+
+  if (!out.backup.url) return out
+  const t1 = Date.now()
+  try {
+    const body = await callViaBackup('cloudsearch', { keywords: 'yiyun', type: 1, limit: 1, offset: 0 })
+    out.backup.ok = body?.code === 200 || Array.isArray(body?.result?.songs)
+    out.backup.error = out.backup.ok ? '' : body?.message || `code=${body?.code}`
+  } catch (e: any) {
+    out.backup.error = e?.message || '连接失败'
+  }
+  out.backup.ms = Date.now() - t1
+  return out
+}
+
+/**
  * 统一调用网易云接口（带兜底）：
  * - 参数规范化（修正 pid / like 等已知陷阱）
  * - 自动注入当前 cookie（登录态）
@@ -155,7 +258,13 @@ export async function callApi(name: string, params: Record<string, any> = {}): P
   if (cookie && merged.cookie === undefined) merged.cookie = cookie
   if (merged.timeout === undefined) merged.timeout = DEFAULT_TIMEOUT
 
+  // 记住最近一次成功的线路，5 分钟内优先用它，避免每个请求都先撞一次坏线路
+  const prefDomain = preferredHost && Date.now() < preferredUntil ? preferredHost : ''
+  if (!prefDomain) preferredHost = ''
+  if (merged.domain === undefined && prefDomain) merged.domain = prefDomain
+
   let lastErr: any
+  let rotations = prefDomain ? Math.max(0, HOSTS.indexOf(prefDomain)) : 0
   for (let attempt = 0; attempt <= RETRY_LIMIT; attempt++) {
     try {
       const res: any = await fn(merged)
@@ -163,6 +272,13 @@ export async function callApi(name: string, params: Record<string, any> = {}): P
       if (res?.cookie) {
         const next = mergeCookie(getCookie(), res.cookie)
         if (next && next !== getCookie()) setCookie(next)
+      }
+      if (merged.domain) {
+        preferredHost = merged.domain
+        preferredUntil = Date.now() + 300000
+      } else {
+        preferredHost = ''
+        preferredUntil = 0
       }
       return res?.body ?? res
     } catch (e: any) {
@@ -172,9 +288,31 @@ export async function callApi(name: string, params: Record<string, any> = {}): P
         rateLimitedUntil = Date.now() + 20000
         break
       }
-      if (attempt >= RETRY_LIMIT || !isRetryable(e)) break
+      const netish = isRetryable(e)
+      // 第一层保险：网络层失败时换官方入口重试（逐请求指定，不动全局配置）
+      if (netish && rotations < HOSTS.length - 1) {
+        merged.domain = HOSTS[++rotations]
+        console.warn(`[api] ${name} 网络失败，切换线路 ${rotations + 1}/${HOSTS.length}：${merged.domain}`)
+        continue
+      }
+      if (attempt >= RETRY_LIMIT || !netish) break
       console.warn(`[api] ${name} 调用失败，第 ${attempt + 1} 次重试:`, e?.body?.message || e?.body?.msg || e?.message || e)
       await sleep(400 * (attempt + 1))
+    }
+  }
+
+  // 第二层保险：内置线路全都不通时，交给备用接口服务
+  if ((isRetryable(lastErr) || isServerSideError(lastErr)) && backupBase()) {
+    try {
+      const body = await callViaBackup(name, merged)
+      if (body?.cookie) {
+        const next = mergeCookie(getCookie(), body.cookie)
+        if (next && next !== getCookie()) setCookie(next)
+      }
+      console.warn(`[api] ${name} 内置线路失败，已通过备用接口完成`)
+      return body
+    } catch (e: any) {
+      console.warn('[api] 备用接口同样失败:', e?.message || e)
     }
   }
 
