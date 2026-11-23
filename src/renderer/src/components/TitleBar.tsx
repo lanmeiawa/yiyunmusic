@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { IconMinimize, IconMaximize, IconClose, IconMusic, IconChevronLeft, IconSearch } from './Icons'
 import { IconSun, IconMoon, IconStar, IconPalette, IconMonitor } from './IconsExtra'
 import { useApp } from '../store'
@@ -17,7 +17,7 @@ export default function TitleBar() {
   const [themeOpen, setThemeOpen] = useState(false)
   const {
     view, setView, currentPlaylistId, doSearch, theme, setTheme, desktopLyrics, toggleDesktopLyrics, customization,
-    searchHistory, clearSearchHistory, removeSearchHistory, t
+    searchKeyword, searchHistory, clearSearchHistory, removeSearchHistory, t
   } = useApp()
 
   // 热搜与搜索建议
@@ -25,6 +25,8 @@ export default function TitleBar() {
   const [sugList, setSugList] = useState<string[]>([])
   const [searchPanelOpen, setSearchPanelOpen] = useState(false)
   const loadHotSearch = async () => {
+    // 输入框里已经有搜索词时，聚焦就按这个词给建议，而不是弹一个空面板
+    if (query.trim()) { loadSuggest(query); return }
     setSearchPanelOpen(true)
     if (hotList.length) return
     try {
@@ -33,17 +35,43 @@ export default function TitleBar() {
     } catch { /* 热搜加载失败静默 */ }
   }
   const sugTimer = useRef<any>(null)
+  /** 建议请求序号：提交搜索或手动关闭后，在途请求的结果直接丢弃，避免面板"又自己弹回来" */
+  const sugSeq = useRef(0)
+  const closeSearchPanel = useCallback(() => {
+    sugSeq.current++
+    clearTimeout(sugTimer.current)
+    setSearchPanelOpen(false)
+  }, [])
   const loadSuggest = (kw: string) => {
     clearTimeout(sugTimer.current)
     if (!kw.trim()) { setSugList([]); return }
+    const seq = ++sugSeq.current
     sugTimer.current = setTimeout(async () => {
       try {
         const res = await window.eApi.call('search_suggest', { keywords: kw.trim() })
+        if (seq !== sugSeq.current) return
         setSugList((res?.result?.songs || []).slice(0, 6).map((s: any) => s.name))
         setSearchPanelOpen(true)
-      } catch { setSugList([]) }
+      } catch { if (seq === sugSeq.current) setSugList([]) }
     }, 300)
   }
+
+  // 搜索完成后，输入框保留这次搜的关键词（不再被清空），方便看清自己在搜什么
+  useEffect(() => {
+    if (view === 'search' && searchKeyword) setQuery(searchKeyword)
+  }, [view, searchKeyword])
+
+  // 面板打开时滚轮滚页面 → 收起，别一直挡住后面的推荐内容
+  useEffect(() => {
+    if (!searchPanelOpen) return
+    const onWheel = (e: WheelEvent) => {
+      const el = e.target as HTMLElement | null
+      if (el && (el.closest('.search-suggest-panel') || el.closest('.titlebar-search'))) return
+      closeSearchPanel()
+    }
+    window.addEventListener('wheel', onWheel, { passive: true })
+    return () => window.removeEventListener('wheel', onWheel)
+  }, [searchPanelOpen, closeSearchPanel])
 
   useEffect(() => {
     window.eApi.win.isMax().then(setIsMax).catch(() => {})
@@ -64,7 +92,7 @@ export default function TitleBar() {
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    setSearchPanelOpen(false)
+    closeSearchPanel()
     if (document.activeElement instanceof HTMLInputElement) document.activeElement.blur()
     if (query.trim()) doSearch(query)
   }
@@ -94,7 +122,10 @@ export default function TitleBar() {
           value={query}
           onChange={(e) => { setQuery(e.target.value); loadSuggest(e.target.value) }}
           onFocus={loadHotSearch}
-          onBlur={() => setTimeout(() => setSearchPanelOpen(false), 200)}
+          onBlur={() => setTimeout(closeSearchPanel, 200)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') { closeSearchPanel(); (e.target as HTMLInputElement).blur() }
+          }}
           placeholder={t('search.placeholder')}
           spellCheck={false}
         />
@@ -107,7 +138,7 @@ export default function TitleBar() {
                   <button className="panel-clear" onClick={clearSearchHistory}>{t('search.clear')}</button>
                 </div>
                 {searchHistory.map((w) => (
-                  <button key={w} className="search-sug-row history" onClick={() => { doSearch(w); setSearchPanelOpen(false); setQuery('') }}>
+                  <button key={w} className="search-sug-row history" onClick={() => { setQuery(w); doSearch(w); closeSearchPanel() }}>
                     <span className="history-dot">↺</span>
                     <span className="hot-word">{w}</span>
                     <span
@@ -123,7 +154,7 @@ export default function TitleBar() {
               <>
                 <div className="search-panel-title">🔥 {t('search.hot')}</div>
                 {hotList.map((w, i) => (
-                  <button key={w} className="search-sug-row" onClick={() => { doSearch(w); setSearchPanelOpen(false); setQuery('') }}>
+                  <button key={w} className="search-sug-row" onClick={() => { setQuery(w); doSearch(w); closeSearchPanel() }}>
                     <span className="hot-rank">{i + 1}</span>
                     <span className="hot-word">{w}</span>
                   </button>
@@ -134,7 +165,7 @@ export default function TitleBar() {
               <>
                 <div className="search-panel-title">{t('search.suggest')}</div>
                 {sugList.map((name) => (
-                  <button key={name} className="search-sug-row" onClick={() => { doSearch(name); setSearchPanelOpen(false); setQuery('') }}>
+                  <button key={name} className="search-sug-row" onClick={() => { setQuery(name); doSearch(name); closeSearchPanel() }}>
                     <span className="hot-word">{name}</span>
                   </button>
                 ))}
