@@ -67,7 +67,6 @@ export interface Customization {
   blur: number
   dim: number
   primary: string
-  sidebarCollapsed: boolean
   playbackRate: number
   showTranslation: boolean
   sleepTimerMin: number
@@ -116,7 +115,6 @@ export const DEFAULT_CUSTOMIZATION: Customization = {
   blur: 12,
   dim: 0.45,
   primary: '',
-  sidebarCollapsed: false,
   playbackRate: 1,
   showTranslation: true,
   sleepTimerMin: 0,
