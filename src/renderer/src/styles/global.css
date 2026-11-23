@@ -435,34 +435,6 @@ input, button, .album-card, .pl-row, .quality-option, .theme-option,
   background-image: linear-gradient(160deg, rgba(18,18,28,0.42), rgba(18,18,28,0.55));
 }
 
-/* ============ 侧边栏紧凑模式（折叠） ============ */
-:root.sidebar-collapsed .sidebar { width: 64px; min-width: 64px; }
-:root.sidebar-collapsed .sidebar .nav-item span,
-:root.sidebar-collapsed .sidebar .side-section-title,
-:root.sidebar-collapsed .sidebar .playlist-item-name,
-:root.sidebar-collapsed .sidebar .side-count,
-:root.sidebar-collapsed .sidebar .side-empty,
-:root.sidebar-collapsed .sidebar .playlist-item-icon { display: none; }
-:root.sidebar-collapsed .sidebar .playlist-item { justify-content: center; padding-left: 0; padding-right: 0; }
-:root.sidebar-collapsed .sidebar .side-user { flex-direction: column; gap: 6px; }
-:root.sidebar-collapsed .sidebar .user-meta { display: none; }
-:root.sidebar-collapsed .sidebar .nav-item { justify-content: center; }
-/* 折叠后鼠标悬停临时展开，避免折叠后完全找不到导航与歌单 */
-:root.sidebar-collapsed .sidebar:hover {
-  width: 212px; min-width: 212px; z-index: 25;
-  box-shadow: 16px 0 36px rgba(20, 22, 40, 0.16);
-}
-:root.sidebar-collapsed .sidebar:hover .nav-item span,
-:root.sidebar-collapsed .sidebar:hover .side-section-title,
-:root.sidebar-collapsed .sidebar:hover .playlist-item-name,
-:root.sidebar-collapsed .sidebar:hover .side-count,
-:root.sidebar-collapsed .sidebar:hover .side-empty,
-:root.sidebar-collapsed .sidebar:hover .playlist-item-icon,
-:root.sidebar-collapsed .sidebar:hover .user-meta { display: revert; }
-:root.sidebar-collapsed .sidebar:hover .playlist-item { justify-content: flex-start; padding-left: 10px; padding-right: 10px; }
-:root.sidebar-collapsed .sidebar:hover .side-user { flex-direction: row; gap: 10px; }
-:root.sidebar-collapsed .sidebar:hover .nav-item { justify-content: flex-start; }
-
 /* ============ 复古主题（千千静听 / Win98-2000 风格，复古版专用） ============ */
 [data-theme="retro"] {
   --bg: #c3c3c3;
@@ -688,8 +660,6 @@ input, button, .album-card, .pl-row, .quality-option, .theme-option,
   height: 38px; border-radius: 10px; background: var(--primary); color: #fff;
   font-size: 13px; font-weight: 600;
 }
-:root.sidebar-collapsed .side-footer { align-items: center; }
-:root.sidebar-collapsed .side-group .side-section-title { display: none; }
 
 /* ============ 低分辨率侧边栏防压缩 ============ */
 .sidebar { overflow: hidden; }
