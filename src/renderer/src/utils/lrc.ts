@@ -115,7 +115,19 @@ export function parseLyric(lrcText: string, translationText?: string, klyricText
       }
     })
   }
-  return main
+  // 空行（只有时间戳、没有文字）是 LRC 里的间奏标记，不是歌词。
+  // 留着会被渲染成一整片「♪」，还会让歌曲后半段被判成"间奏等待"，看着像歌词丢了。
+  const cleaned = main.filter((l) => {
+    const t = l.text.trim()
+    return !!t && !/^[♪♫]+$/.test(t)
+  })
+  // 过滤后重新接上每行的结束时间（逐字歌词有真实结束时间，保留）
+  for (let i = 0; i < cleaned.length; i++) {
+    if (!cleaned[i].words?.length) {
+      cleaned[i].end = i + 1 < cleaned.length ? cleaned[i + 1].time : cleaned[i].time + 5
+    }
+  }
+  return cleaned
 }
 
 /** 根据当前播放时间找到活动行索引 */
@@ -191,14 +203,15 @@ export function formatTime(sec: number): string {
 /**
  * 判断当前时间是否处在「一句已唱完、下一句还没到」的间奏里。
  * 有逐字时间轴用真实结束时间；普通 LRC 没有结束时间，按字数估算（约 0.3s/字）。
- * 只有空档大于 2.2 秒才算间奏，避免正常换句时高亮闪烁。
+ * - 空档超过 6 秒才算间奏：正常换句、短停顿都保持高亮，只有真正的长间奏才让出画面；
+ * - 最后一句永远算「在唱」，尾奏再长也不会把整页变成空白（否则看着像后半段歌词丢了）。
  */
 export function isLyricGap(line: LyricLine | undefined, next: LyricLine | undefined, time: number): boolean {
   if (!line) return false
+  if (!next) return false
   const estEnd = line.words?.length && line.end
     ? line.end
     : line.time + Math.min(9, Math.max(1.6, (line.text?.length || 0) * 0.3))
   if (time <= estEnd + 0.7) return false
-  const gap = next ? next.time - estEnd : Number.POSITIVE_INFINITY
-  return gap > 2.2
+  return next.time - estEnd > 6
 }
