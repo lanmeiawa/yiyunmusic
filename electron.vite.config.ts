@@ -6,7 +6,7 @@ export default defineConfig({
   main: {
     build: {
       rollupOptions: {
-        external: ['NeteaseCloudMusicApi', 'electron-store']
+        external: ['NeteaseCloudMusicApi', /^NeteaseCloudMusicApi\//, 'electron-store']
       }
     }
   },
