@@ -1639,7 +1639,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     })
     // 托盘/快捷键解锁时同步 locked 状态
     const offS = window.eApi.lyrics.onSettings((s: any) => {
-      if (s) setDesktopLyricsState((p) => ({ ...p, locked: !!s.locked, enabled: !!s.enabled || p.enabled }))
+      if (s) setDesktopLyricsState((p) => ({ ...p, ...s, enabled: !!s.enabled || p.enabled }))
     })
     return () => { off?.(); offS() }
   }, [])
