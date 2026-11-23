@@ -64,6 +64,9 @@ export default function DesktopLyrics() {
   })
   const [locked, setLocked] = useState(false)
   const [fontSize, setFontSize] = useState(28)
+  const [align, setAlign] = useState<'left' | 'center' | 'right'>('center')
+  const [bgOpacity, setBgOpacity] = useState(0.85)
+  const [outline, setOutline] = useState(false)
   const [color, setColor] = useState('#ff9db4')
   const [showBar, setShowBar] = useState(false)
   const [showColors, setShowColors] = useState(false)
@@ -109,6 +112,9 @@ export default function DesktopLyrics() {
         setLocked(!!s.locked)
         setFontSize(s.fontSize || 28)
         if (s.color) setColor(s.color)
+        setAlign((s.align as any) || 'center')
+        setBgOpacity(typeof s.bgOpacity === 'number' ? s.bgOpacity : 0.85)
+        setOutline(!!s.outline)
         applyTheme(s.theme)
       }
     }).catch(() => {})
@@ -117,6 +123,9 @@ export default function DesktopLyrics() {
         setLocked(!!s.locked)
         setFontSize(s.fontSize || 28)
         if (s.color) setColor(s.color)
+        setAlign((s.align as any) || 'center')
+        setBgOpacity(typeof s.bgOpacity === 'number' ? s.bgOpacity : 0.85)
+        setOutline(!!s.outline)
       }
     })
     const offT = (window.eApi.lyrics as any).onTheme?.((t: string) => applyTheme(t)) || (() => {})
@@ -165,14 +174,23 @@ export default function DesktopLyrics() {
     await window.eApi.lyrics.settings({ color: c })
   }
 
+  /** 背景快捷切换：清晰 → 半透明 → 完全隐藏 */
+  const cycleBg = async () => {
+    const order = [0.85, 0.5, 0]
+    const idx = order.findIndex((v) => Math.abs(v - bgOpacity) < 0.02)
+    const next = order[(idx + 1) % order.length]
+    setBgOpacity(next)
+    await window.eApi.lyrics.settings({ bgOpacity: next })
+  }
+
   const { lines, active } = data
   const curLine = active >= 0 ? lines[active] : undefined
   const cover = coverUrl(data.cover, 300)
 
   return (
     <div
-      className={`desktop-lyrics ${locked ? 'locked' : ''}`}
-      style={{ fontSize, ['--dl-color' as any]: color }}
+      className={`desktop-lyrics ${locked ? 'locked' : ''} dl-align-${align} ${bgOpacity <= 0.02 ? 'no-bg' : ''} ${outline ? 'outline' : ''}`}
+      style={{ fontSize, ['--dl-color' as any]: color, ['--dl-alpha' as any]: Math.max(0, Math.min(1, bgOpacity)) }}
       onMouseDown={onWindowMouseDown}
     >
       {cover && <div className="dl-bg" style={{ backgroundImage: `url(${cover})` }} />}
@@ -197,6 +215,11 @@ export default function DesktopLyrics() {
           <button title="减小字号" onClick={() => changeFontSize(-2)}>A-</button>
           <button title="增大字号" onClick={() => changeFontSize(2)}>A+</button>
           <button title="歌词颜色" className={showColors ? 'active' : ''} onClick={() => setShowColors((v) => !v)}>🎨</button>
+          <button
+            title={`背景 ${Math.round(bgOpacity * 100)}%（点击切换：清晰 / 半透明 / 完全隐藏）`}
+            className={bgOpacity <= 0.02 ? 'active' : ''}
+            onClick={cycleBg}
+          >◐</button>
           <button
             title={locked ? '解锁（可拖动/点击）' : '锁定（鼠标穿透）'}
             className={locked ? 'active' : ''}
