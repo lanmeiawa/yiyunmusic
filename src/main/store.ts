@@ -178,7 +178,11 @@ const DEFAULT: StoreShape = {
     enabled: false,
     locked: false,
     opacity: 0.85,
-    fontSize: 28
+    fontSize: 28,
+    align: 'center',
+    anchor: 'free',
+    bgOpacity: 0.85,
+    outline: false
   },
   customization: { ...DEFAULT_CUSTOMIZATION }
 }
