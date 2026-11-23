@@ -60,7 +60,7 @@
 
 ### 歌词（主角）
 
-- **动态歌词**：网易云经典样式 —— 当前行放大、逐字扫光、上下行渐隐、翻译歌词；歌曲带逐字时间轴（klyric）时按字精准点亮，否则按行进度平滑推算；进入歌词页 / 切歌 / 返回时自动对准当前句，长间奏与空歌词行都不会让后半段“失踪”
+- **动态歌词**：网易云经典样式 —— 当前行放大、逐字卡拉OK扫光、上下行渐隐、翻译歌词；歌曲带逐字时间轴（klyric）时按字精准点亮，否则按行进度平滑推算；进入歌词页 / 切歌 / 返回时自动对准当前句，长间奏与空歌词行都不会让后半段“失踪”
 - **桌面歌词**：独立悬浮窗，半透明毛玻璃 + 模糊封面背景，逐字扫光；可拖动、调字号、换颜色、锁鼠标穿透；窗口宽窄自动切换 1 / 2 / 3 行
 - **歌词搜歌**：输入一句歌词，找到对应歌曲
 - **本地歌词识别**：自动识别同目录同名 `.lrc` 歌词（支持 GBK 编码）和封面图
@@ -94,26 +94,26 @@
 
 ## 最近更新
 
-**v2.2.7** —— 歌词时间轴更准：开头不再被「企划 / 录音师」这类制作信息占位，长间奏里扫光也不会慢慢爬；搜索完自动收起面板、输入框保留关键词，面板也不再挡住首页「热门推荐」。
+**v2.2.8** —— 接口多了两道保险：网络不通会自动切换官方入口，整套接口失效时还能改走你自己部署的接口服务；设置里可一键体检并看到当前线路延迟。
 
 更早的版本见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 下载
 
-Windows 和 Linux 现在放在**同一个发布页**，进去按系统挑就行：[v2.2.7 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.2.7)。
+Windows 和 Linux 现在放在**同一个发布页**，进去按系统挑就行：[v2.2.8 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.2.8)。
 
 ### Windows（10 / 11 x64）
 
-- **yiyunmusic-Setup-2.2.7.exe** —— 安装版（可自定义安装目录、自动创建快捷方式）
-- **yiyunmusic-portable-2.2.7.exe** —— 便携版，免安装，双击即用
+- **yiyunmusic-Setup-2.2.8.exe** —— 安装版（可自定义安装目录、自动创建快捷方式）
+- **yiyunmusic-portable-2.2.8.exe** —— 便携版，免安装，双击即用
 
 > 安装新版时会自动迁移旧版的登录态与个性化设置，无需重新扫码登录。登录凭证（Cookie）已加密存储，不再明文落盘。
 
 ### Linux（x64）
 
-- **yiyunmusic-2.2.7-x86_64.AppImage** —— Arch / 通用，`chmod +x` 后双击即可运行
-- **yiyunmusic-2.2.7-amd64.deb** —— Ubuntu / Debian，`sudo apt install ./yiyunmusic-2.2.7-amd64.deb`
-- **yiyunmusic-2.2.7-x64.tar.gz** —— 通用便携版，解压后运行 `./yiyunmusic`
+- **yiyunmusic-2.2.8-x86_64.AppImage** —— Arch / 通用，`chmod +x` 后双击即可运行
+- **yiyunmusic-2.2.8-amd64.deb** —— Ubuntu / Debian，`sudo apt install ./yiyunmusic-2.2.8-amd64.deb`
+- **yiyunmusic-2.2.8-x64.tar.gz** —— 通用便携版，解压后运行 `./yiyunmusic`
 
 ## 使用方法
 
