@@ -340,18 +340,6 @@ export default function SettingsView() {
         </div>
         <label className="settings-switch-row">
           <span>
-            <b>侧边栏紧凑模式</b>
-            <i>收起侧边栏文字，只保留图标，给内容区更多空间</i>
-          </span>
-          <input
-            type="checkbox"
-            checked={customization.sidebarCollapsed}
-            onChange={(e) => setCustomization({ sidebarCollapsed: e.target.checked })}
-          />
-          <span className="settings-switch" />
-        </label>
-        <label className="settings-switch-row">
-          <span>
             <b>显示歌词翻译</b>
             <i>歌词页与桌面歌词中同步显示翻译行</i>
           </span>
@@ -665,7 +653,7 @@ export default function SettingsView() {
           onClick={() => {
             setCustomization({
               bgPath: '', blur: 12, dim: 0.45, primary: '',
-              sidebarCollapsed: false, playbackRate: 1,
+              playbackRate: 1,
               showTranslation: true, sleepTimerMin: 0,
               eqPreset: 'off', eqBands: [...EQ_PRESETS.off],
               visualShape: 'bars', visualSensitivity: 1.6,
