@@ -109,6 +109,8 @@ const api = {
     settings: (patch: Record<string, any>) => ipcRenderer.invoke('lyrics:settings', patch),
     getSettings: () => ipcRenderer.invoke('lyrics:getsettings'),
     lock: (locked: boolean) => ipcRenderer.invoke('lyrics:lock', locked),
+    // 贴到屏幕九宫格位置（tl/tc/tr/ml/mc/mr/bl/bc/br）
+    anchor: (code: string) => ipcRenderer.invoke('lyrics:anchor', code),
     // 主界面推送歌词
     push: (payload: Record<string, any>) => ipcRenderer.send('lyrics:push', payload),
     // 歌词窗监听
