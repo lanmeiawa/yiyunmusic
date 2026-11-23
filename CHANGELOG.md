@@ -14,6 +14,7 @@
 - **第一层保险**：网络失败时依次切换 interface.music.163.com → interface3 → music.163.com（三个入口实测可用），成功后记住线路 5 分钟，重启回默认。
 - **第二层保险**：设置 → 接口线路，可填自部署的 NeteaseCloudMusicApi 地址，内置线路全挂时自动改走它，参数与 Cookie 原样带过去。
 - **一键体检**：显示内置 / 备用的延迟与错误，自动切换时标注「已切到 线路 2」。
+- **开源引用**：内置接口来自 [Binaryify/NeteaseCloudMusicApi](https://github.com/Binaryify/NeteaseCloudMusicApi)（作者 Binaryify）；备用服务方案参考 [peso12345/NeteaseCloudMusicApi](https://github.com/peso12345/NeteaseCloudMusicApi)（作者 peso12345）。感谢两位作者。
 - **功能无删减**：下载、听书电台、主题、均衡器、可视化、语音转文字、私人 FM 全部保留。
 
 [完整说明](docs/RELEASE-v2.2.8.md) · [下载](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.2.8)
