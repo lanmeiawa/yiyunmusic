@@ -129,7 +129,7 @@ export default function LyricsView() {
 
       <div className="lyrics-topbar">
         <div className="now-info">
-          <div className={`now-cover ${player.isPlaying ? 'spinning' : ''}`}>
+          <div className="now-cover">
             {cover ? <NetImg src={cover} /> : <IconMusic size={30} />}
           </div>
           <div className="now-text">
