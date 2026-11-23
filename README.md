@@ -94,26 +94,26 @@
 
 ## 最近更新
 
-**v2.2.6** —— 歌词自动对齐更稳：进入歌词页、切歌、从别的页面返回都直接对准当前句，不再等一两秒；只有时间戳没有文字的空行不再被渲染成一片「♪」，后半段歌词不会提前“失踪”。同时修掉了鼠标碰一下歌曲封面就往下坠半个身位的问题，并移除了与沉浸布局重复的「侧边栏紧凑模式」。
+**v2.2.7** —— 歌词时间轴更准：开头不再被「企划 / 录音师」这类制作信息占位，长间奏里扫光也不会慢慢爬；搜索完自动收起面板、输入框保留关键词，面板也不再挡住首页「热门推荐」。
 
 更早的版本见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 下载
 
-Windows 和 Linux 现在放在**同一个发布页**，进去按系统挑就行：[v2.2.6 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.2.6)。
+Windows 和 Linux 现在放在**同一个发布页**，进去按系统挑就行：[v2.2.7 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.2.7)。
 
 ### Windows（10 / 11 x64）
 
-- **yiyunmusic-Setup-2.2.6.exe** —— 安装版（可自定义安装目录、自动创建快捷方式）
-- **yiyunmusic-portable-2.2.6.exe** —— 便携版，免安装，双击即用
+- **yiyunmusic-Setup-2.2.7.exe** —— 安装版（可自定义安装目录、自动创建快捷方式）
+- **yiyunmusic-portable-2.2.7.exe** —— 便携版，免安装，双击即用
 
 > 安装新版时会自动迁移旧版的登录态与个性化设置，无需重新扫码登录。登录凭证（Cookie）已加密存储，不再明文落盘。
 
 ### Linux（x64）
 
-- **yiyunmusic-2.2.6-x86_64.AppImage** —— Arch / 通用，`chmod +x` 后双击即可运行
-- **yiyunmusic-2.2.6-amd64.deb** —— Ubuntu / Debian，`sudo apt install ./yiyunmusic-2.2.6-amd64.deb`
-- **yiyunmusic-2.2.6-x64.tar.gz** —— 通用便携版，解压后运行 `./yiyunmusic`
+- **yiyunmusic-2.2.7-x86_64.AppImage** —— Arch / 通用，`chmod +x` 后双击即可运行
+- **yiyunmusic-2.2.7-amd64.deb** —— Ubuntu / Debian，`sudo apt install ./yiyunmusic-2.2.7-amd64.deb`
+- **yiyunmusic-2.2.7-x64.tar.gz** —— 通用便携版，解压后运行 `./yiyunmusic`
 
 ## 使用方法
 
