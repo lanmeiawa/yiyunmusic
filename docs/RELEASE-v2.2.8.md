@@ -32,7 +32,9 @@ interface.music.163.com → interface3.music.163.com → music.163.com
 
 **第二层：自建备用服务**
 
-你给的那个仓库（peso12345/NeteaseCloudMusicApi）是 Binaryify 官方库的 fork，代码和接口一致。所以真正意义上的「换一个」不是换库，而是**换一个服务实例**：
+内置的接口库来自开源项目 **[NeteaseCloudMusicApi](https://github.com/Binaryify/NeteaseCloudMusicApi)**（作者 [Binaryify](https://github.com/Binaryify)）；你提到的 **[peso12345/NeteaseCloudMusicApi](https://github.com/peso12345/NeteaseCloudMusicApi)**（作者 [peso12345](https://github.com/peso12345)）是它的 fork，代码与接口一致。
+
+所以真正意义上的「换一个」不是换库，而是**换一个服务实例**：
 
 - 设置 → 接口线路，填一个自部署的地址，例如 `http://127.0.0.1:3000`
 - 内置三条线路全部不通时，同一个调用会自动改走这个地址，参数、Cookie 原样带过去
@@ -57,3 +59,12 @@ interface.music.163.com → interface3.music.163.com → music.163.com
 - **整体失效演练**：三条线路全部不可达 → 搜索、歌词自动经由备用服务返回（`songs=3`、`lrc=1378`），体检正确显示「内置 ✗ / 备用 ✓」
 - 恢复默认域名后重新体检：内置 480ms（默认线路），搜索正常
 - 三种布局 × 全部视图冒烟通过，**0 条控制台报错**
+
+## 开源引用
+
+这一层能力建立在两个开源项目上，在此注明出处与作者：
+
+- **[NeteaseCloudMusicApi](https://github.com/Binaryify/NeteaseCloudMusicApi)** —— 作者 [Binaryify](https://github.com/Binaryify)，MIT 许可；本项目内置的网易云接口实现来自这个项目。
+- **[peso12345/NeteaseCloudMusicApi](https://github.com/peso12345/NeteaseCloudMusicApi)** —— 作者 [peso12345](https://github.com/peso12345)，上述项目的 fork；「自建备用服务」可以按它的 README 部署（`node app.js` 或 Vercel 一键部署）。
+
+感谢两位作者把网易云接口整理成可直接使用的开源工具。
