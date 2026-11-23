@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useApp } from '../store'
 import { findActiveIndex, computeWordProgress, isLyricGap } from '../utils/lrc'
 import { coverUrl } from '../utils/cover'
@@ -69,6 +69,8 @@ export default function LyricsView() {
   const [active, setActive] = useState(-1)
   const [userScrolling, setUserScrolling] = useState(false)
   const resumeTimer = useRef<any>(null)
+  /** 本次进入歌词页后是否已完成首次对齐（避免从顶部一路滚下来） */
+  const alignedRef = useRef(false)
 
   const rawIdx = findActiveIndex(lyricLines, player.currentTime)
   const rawLine = rawIdx >= 0 ? lyricLines[rawIdx] : undefined
@@ -79,27 +81,46 @@ export default function LyricsView() {
   const activeLine = activeIdx >= 0 ? lyricLines[activeIdx] : undefined
   const wp = computeWordProgress(activeLine, player.currentTime)
 
+  // 切换歌曲：回到顶部并重新做一次"首次对齐"。必须排在同步高亮之前，
+  // 否则刚算好的高亮会被这里的 setActive(-1) 覆盖，要等下一句歌词才恢复。
   useEffect(() => {
-    if (activeIdx !== active) setActive(activeIdx)
-  }, [activeIdx])
-
-  // 自动滚动到当前行（用户未手动滚动时）
-  useEffect(() => {
-    if (userScrolling) return
-    if (active < 0 || !scrollRef.current) return
-    const el = lineRefs.current[active]
-    const container = scrollRef.current
-    if (!el) return
-    const target = el.offsetTop - container.clientHeight / 2 + el.offsetHeight / 2
-    container.scrollTo({ top: target, behavior: 'smooth' })
-  }, [active, userScrolling, lyricLines.length])
-
-  // 切换歌曲时回到顶部
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTo({ top: 0, behavior: 'auto' })
+    alignedRef.current = false
+    if (scrollRef.current) scrollRef.current.scrollTop = 0
     setActive(-1)
     setUserScrolling(false)
   }, [player.current?.id])
+
+  // 高亮同步：带上歌曲 id，切歌后即使索引刚好相同也能立刻对上
+  useEffect(() => {
+    if (activeIdx !== active) setActive(activeIdx)
+  }, [activeIdx, player.current?.id])
+
+  /** 把某一行放到容器垂直中线；force 或距离很远时直接跳过去，避免长距离平滑滚动像"卡了两秒" */
+  const alignTo = useCallback((idx: number, force?: boolean) => {
+    const container = scrollRef.current
+    const el = idx >= 0 ? lineRefs.current[idx] : null
+    if (!container || !el) return false
+    const target = Math.max(0, el.offsetTop - container.clientHeight / 2 + el.offsetHeight / 2)
+    const far = Math.abs(target - container.scrollTop) > container.clientHeight * 0.8
+    container.scrollTo({ top: target, behavior: force || far ? 'auto' : 'smooth' })
+    return true
+  }, [])
+
+  // 进入歌词页 / 从其他页面返回 / 切歌后歌词到位：立刻对准当前进度，不从顶部慢慢滚过去
+  useEffect(() => {
+    if (alignedRef.current || !lyricLines.length) return
+    // 间奏里 activeIdx 是 -1，但页面仍应停在"刚唱完的那一句"，否则会退回开头，看起来像后半段歌词丢了
+    const idx = rawIdx >= 0 ? rawIdx : 0
+    if (alignTo(idx, true)) alignedRef.current = true
+  }, [lyricLines, rawIdx, alignTo, player.current?.id])
+
+  // 追随播放进度滚动；锚点用 rawIdx，间奏时不会停下不动
+  useEffect(() => {
+    if (userScrolling || !alignedRef.current) return
+    const idx = rawIdx >= 0 ? rawIdx : active
+    if (idx < 0) return
+    alignTo(idx)
+  }, [rawIdx, active, userScrolling, lyricLines.length, alignTo])
 
   const onWheel = () => {
     setUserScrolling(true)
