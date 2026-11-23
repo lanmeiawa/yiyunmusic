@@ -286,7 +286,10 @@ function createLyricsWindow() {
     if (!lyricsWindow || lyricsWindow.isDestroyed()) return
     const [x, y] = lyricsWindow.getPosition()
     const [bw, bh] = lyricsWindow.getSize()
-    setDesktopLyrics({ x, y, width: bw, height: bh })
+    const patch: any = { x, y, width: bw, height: bh }
+    // 用户自己拖动/缩放后就不再算「贴边」，避免设置里还显示着某个预设位置
+    if (Date.now() - anchorSetAt > 800) patch.anchor = 'free'
+    setDesktopLyrics(patch)
   }
   const persistPos = () => {
     if (saveTimer) clearTimeout(saveTimer)
@@ -356,6 +359,39 @@ function resizeLyricsWindow(dw: number) {
   lyricsWindow.setSize(nw, nh)
   const [x, y] = lyricsWindow.getPosition()
   setDesktopLyrics({ width: nw, height: nh, x, y })
+}
+
+const ANCHOR_MARGIN = 28
+/** 最近一次「贴边」操作的时间，用来区分程序移动窗口和用户拖动 */
+let anchorSetAt = 0
+
+/** 把歌词窗贴到屏幕工作区的九宫格位置（tl/tc/tr/ml/mc/mr/bl/bc/br） */
+function anchorLyrics(code: string): boolean {
+  if (!lyricsWindow || lyricsWindow.isDestroyed()) return false
+  const wa = screen.getPrimaryDisplay().workArea
+  const [w, h] = lyricsWindow.getSize()
+  const left = wa.x + ANCHOR_MARGIN
+  const right = wa.x + wa.width - w - ANCHOR_MARGIN
+  const top = wa.y + ANCHOR_MARGIN
+  const bottom = wa.y + wa.height - h - ANCHOR_MARGIN
+  const cx = Math.round(wa.x + (wa.width - w) / 2)
+  const cy = Math.round(wa.y + (wa.height - h) / 2)
+  let x = cx
+  let y = cy
+  if (code === 'tl') { x = left; y = top }
+  else if (code === 'tc') { x = cx; y = top }
+  else if (code === 'tr') { x = right; y = top }
+  else if (code === 'ml') { x = left; y = cy }
+  else if (code === 'mc') { x = cx; y = cy }
+  else if (code === 'mr') { x = right; y = cy }
+  else if (code === 'bl') { x = left; y = bottom }
+  else if (code === 'bc') { x = cx; y = bottom }
+  else if (code === 'br') { x = right; y = bottom }
+  else return false
+  anchorSetAt = Date.now()
+  lyricsWindow.setPosition(x, y)
+  setDesktopLyrics({ x, y, anchor: code })
+  return true
 }
 
 function applyLyricsLock(locked: boolean) {
@@ -972,10 +1008,25 @@ function setupIpc() {
       if (typeof patch.locked === 'boolean') applyLyricsLock(patch.locked)
       lyricsWindow.webContents.send('lyrics:settings', next)
     }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('lyrics:settings', next)
+    }
     updateTrayMenu()
     return next
   })
   ipcMain.handle('lyrics:getsettings', () => ({ ...getStore().desktopLyrics, theme: getStore().theme }))
+  // 贴到屏幕九宫格位置（设置页的三乘三按钮）
+  ipcMain.handle('lyrics:anchor', (_e, code: string) => {
+    // 歌词窗没开时先打开，让用户当场看到贴到哪儿了
+    if (!lyricsWindow || lyricsWindow.isDestroyed()) {
+      syncLyricsEnabled(true)
+      createLyricsWindow()
+    }
+    anchorLyrics(code)
+    const next = { ...getStore().desktopLyrics }
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('lyrics:settings', next)
+    return next
+  })
   ipcMain.handle('lyrics:lock', (_e, locked: boolean) => {
     setLyricsLocked(locked)
     return locked
