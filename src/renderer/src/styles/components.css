@@ -136,7 +136,7 @@
 
 .lyrics-scroll {
   position: relative; z-index: 2; height: calc(100% - 86px); overflow-y: auto;
-  scrollbar-width: none; padding: 0 40px; scroll-behavior: smooth;
+  scrollbar-width: none; padding: 0 40px;
 }
 .lyrics-scroll::-webkit-scrollbar { display: none; }
 .lyrics-scroll.user-scrolling { scroll-behavior: auto; cursor: grabbing; }
@@ -190,10 +190,11 @@
   width: 50px; height: 50px; border-radius: 10px; overflow: hidden; flex-shrink: 0;
   background: var(--cover-grad); color: #fff; display: grid; place-items: center;
   box-shadow: var(--shadow-sm); border: 0; padding: 0; cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition: box-shadow 0.18s ease;
 }
-.pb-cover:hover { transform: scale(1.05); box-shadow: var(--shadow); }
-.pb-cover:active { transform: scale(0.97); }
+/* 只换阴影，不做缩放：点击封面时任何位移/缩放都容易被看成"跳一下" */
+.pb-cover:hover { box-shadow: var(--shadow); }
+.pb-cover:active { box-shadow: var(--shadow-sm); }
 .pb-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pb-song-meta { min-width: 0; flex: 1; }
 .pb-song-name { font-size: 13px; font-weight: 650; display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -379,7 +380,8 @@
 /* ============ 歌曲封面缩略图（列表） ============ */
 .col-index { position: relative; }
 .row-cover { cursor: pointer; transition: transform .15s; }
-.row-cover:hover { transform: scale(1.05); }
+/* 注意：这里必须带上基础的 translateY(-50%)，否则 hover 会覆盖居中位移，封面会往下跳半个身位 */
+.row-cover:hover { transform: translateY(-50%) scale(1.05); }
 .row-cover {
   position: absolute; left: 0; top: 50%; transform: translateY(-50%);
   width: 36px; height: 36px; border-radius: 7px; overflow: hidden;
