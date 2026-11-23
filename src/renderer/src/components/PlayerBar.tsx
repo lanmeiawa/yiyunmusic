@@ -74,9 +74,13 @@ export default function PlayerBar() {
     <div className="playerbar">
       {/* 左：歌曲信息 */}
       <div className="pb-song">
-        <div className={`pb-cover ${current?.album?.picUrl ? '' : 'empty'}`}>
+        <button
+          className={`pb-cover ${current?.album?.picUrl ? '' : 'empty'}`}
+          onClick={() => setView(current ? 'lyrics' : 'discover')}
+          title={current ? '打开歌词页' : '去发现音乐'}
+        >
           {current?.album?.picUrl ? <NetImg src={coverUrl(current.album.picUrl, 100)} /> : <IconMusic size={20} />}
-        </div>
+        </button>
         <div className="pb-song-meta">
           <div className="pb-song-name">
             <span className="pb-song-title" title={current?.name || ''}>{current?.name || '尚未播放'}</span>
