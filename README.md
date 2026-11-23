@@ -94,26 +94,26 @@
 
 ## 最近更新
 
-**v2.2.8** —— 接口多了两道保险：网络不通会自动切换官方入口，整套接口失效时还能改走你自己部署的接口服务；设置里可一键体检并看到当前线路延迟。
+**v2.2.9** —— 桌面歌词支持九宫格贴边、左中右对齐和 0–100% 背景透明度（可以彻底透明），透明时还有文字描边保证可读。
 
 更早的版本见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 下载
 
-Windows 和 Linux 现在放在**同一个发布页**，进去按系统挑就行：[v2.2.8 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.2.8)。
+Windows 和 Linux 现在放在**同一个发布页**，进去按系统挑就行：[v2.2.9 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.2.9)。
 
 ### Windows（10 / 11 x64）
 
-- **yiyunmusic-Setup-2.2.8.exe** —— 安装版（可自定义安装目录、自动创建快捷方式）
-- **yiyunmusic-portable-2.2.8.exe** —— 便携版，免安装，双击即用
+- **yiyunmusic-Setup-2.2.9.exe** —— 安装版（可自定义安装目录、自动创建快捷方式）
+- **yiyunmusic-portable-2.2.9.exe** —— 便携版，免安装，双击即用
 
 > 安装新版时会自动迁移旧版的登录态与个性化设置，无需重新扫码登录。登录凭证（Cookie）已加密存储，不再明文落盘。
 
 ### Linux（x64）
 
-- **yiyunmusic-2.2.8-x86_64.AppImage** —— Arch / 通用，`chmod +x` 后双击即可运行
-- **yiyunmusic-2.2.8-amd64.deb** —— Ubuntu / Debian，`sudo apt install ./yiyunmusic-2.2.8-amd64.deb`
-- **yiyunmusic-2.2.8-x64.tar.gz** —— 通用便携版，解压后运行 `./yiyunmusic`
+- **yiyunmusic-2.2.9-x86_64.AppImage** —— Arch / 通用，`chmod +x` 后双击即可运行
+- **yiyunmusic-2.2.9-amd64.deb** —— Ubuntu / Debian，`sudo apt install ./yiyunmusic-2.2.9-amd64.deb`
+- **yiyunmusic-2.2.9-x64.tar.gz** —— 通用便携版，解压后运行 `./yiyunmusic`
 
 ## 使用方法
 
