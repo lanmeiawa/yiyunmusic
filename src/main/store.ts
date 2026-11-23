@@ -44,8 +44,6 @@ export interface Customization {
   dim: number
   /** 自定义主色（hex），空串表示跟随所选主题 */
   primary: string
-  /** 侧边栏折叠（紧凑图标模式） */
-  sidebarCollapsed: boolean
   /** 播放倍速 0.5-2 */
   playbackRate: number
   /** 歌词翻译显示 */
@@ -105,7 +103,6 @@ export const DEFAULT_CUSTOMIZATION: Customization = {
   blur: 12,
   dim: 0.45,
   primary: '',
-  sidebarCollapsed: false,
   playbackRate: 1,
   showTranslation: true,
   sleepTimerMin: 0,
