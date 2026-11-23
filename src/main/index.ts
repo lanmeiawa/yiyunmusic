@@ -21,7 +21,8 @@ import {
   smartSearch,
   switchAccount,
   fetchFmBatch,
-  searchSection
+  searchSection,
+  checkApiHealth
 } from './api'
 import { startAudioProxy, stopAudioProxy, registerAudioUrl, registerLocalAudio, hlsProxyUrl, probeStream } from './audio-proxy'
 import { registerAsrIpc } from './asr'
@@ -631,6 +632,9 @@ function setupIpc() {
 
   // 播放地址
   ipcMain.handle('song:url', async (_e, id, level) => getSongUrl(id, level))
+  // 接口线路体检（内置 / 备用）
+  ipcMain.handle('api:health', async () => checkApiHealth())
+
   // 多级兜底搜索
   // 搜索补充分区（专辑 / 听书 / 歌词）：点开分类时再请求，减少搜索时的请求数
   ipcMain.handle('search:section', async (_e, kw: string, kind: 'albums' | 'shows' | 'lyrics') => {
