@@ -108,6 +108,8 @@ export interface Customization {
   radioModelReady?: boolean
   /** 开机自启 */
   autoLaunch: boolean
+  /** 备用接口地址（自建 NeteaseCloudMusicApi，内置线路失效时使用） */
+  apiBackupUrl: string
 }
 
 export const DEFAULT_CUSTOMIZATION: Customization = {
@@ -138,7 +140,8 @@ export const DEFAULT_CUSTOMIZATION: Customization = {
   layout: 'classic',
   radioTranscript: false,
   radioModelReady: false,
-  autoLaunch: false
+  autoLaunch: false,
+  apiBackupUrl: ''
 }
 
 export interface DesktopLyricsSettings {
