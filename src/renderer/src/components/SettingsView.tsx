@@ -68,6 +68,25 @@ export default function SettingsView() {
   const [asrModels, setAsrModels] = useState<AsrModelRow[]>([])
   const [asrBusyId, setAsrBusyId] = useState('')
   const [asrPct, setAsrPct] = useState(0)
+  // 接口线路（内置 + 备用服务）
+  const [apiUrl, setApiUrl] = useState(customization.apiBackupUrl || '')
+  const [apiHealth, setApiHealth] = useState<any>(null)
+  const [apiBusy, setApiBusy] = useState(false)
+  const testApi = async () => {
+    setApiBusy(true)
+    try {
+      await setCustomization({ apiBackupUrl: apiUrl.trim() })
+      const r = await window.eApi.apiHealth()
+      setApiHealth(r)
+      const ok = r?.builtin?.ok
+      setMessage(ok ? `内置线路正常（${r.builtin.ms}ms）` : '内置线路异常，请看下方提示')
+    } catch (e: any) {
+      setMessage('线路检测失败：' + (e?.message || '未知错误'))
+    } finally {
+      setApiBusy(false)
+    }
+  }
+
   const refreshAsr = async () => {
     const [list, st] = await Promise.all([
       window.eApi.asrModels().catch(() => []),
@@ -575,6 +594,41 @@ export default function SettingsView() {
           />
           <span className="settings-slider-value">{(customization.visualSensitivity || 1.6).toFixed(1)}x</span>
         </div>
+      </section>
+
+      {/* ===== 接口线路 ===== */}
+      <section className="settings-card">
+        <h2>接口线路</h2>
+        <p className="settings-desc">
+          默认直连网易云，网络不通时会自动切换到其他官方入口。如果内置接口整体失效（比如接口库跟不上官方改动），可以填一个自建的 NeteaseCloudMusicApi 服务地址，内置线路失败时自动改走它。
+        </p>
+        <div className="settings-row">
+          <input
+            className="settings-input"
+            value={apiUrl}
+            onChange={(e) => setApiUrl(e.target.value)}
+            placeholder="http://127.0.0.1:3000（留空表示只用内置线路）"
+            spellCheck={false}
+          />
+          <button
+            className="settings-btn"
+            onClick={async () => {
+              await setCustomization({ apiBackupUrl: apiUrl.trim() })
+              setApiHealth(null)
+              setMessage(apiUrl.trim() ? '备用接口地址已保存' : '已清空备用接口，只使用内置线路')
+            }}
+          >保存</button>
+          <button className="settings-btn" disabled={apiBusy} onClick={testApi}>{apiBusy ? '检测中…' : '测试线路'}</button>
+        </div>
+        {apiHealth && (
+          <div className="settings-tip">
+            内置：{apiHealth.builtin?.ok ? `✓ ${apiHealth.builtin.ms}ms${apiHealth.builtin.via && apiHealth.builtin.via !== '默认' ? '（已切到 ' + apiHealth.builtin.via + '）' : ''}` : `✗ ${apiHealth.builtin?.error || '不可用'}`}
+            {apiHealth.backup?.url ? `　备用：${apiHealth.backup?.ok ? `✓ ${apiHealth.backup.ms}ms` : `✗ ${apiHealth.backup?.error || '不可用'}`}` : '　备用：未配置'}
+          </div>
+        )}
+        <p className="settings-tip">
+          备用地址请只填自己部署的服务：调用时会把登录 Cookie 一并带过去，公共地址不建议使用。
+        </p>
       </section>
 
       {/* ===== 启动与系统 ===== */}
