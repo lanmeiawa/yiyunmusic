@@ -152,6 +152,14 @@ export interface DesktopLyricsSettings {
   color?: string
   x?: number
   y?: number
+  /** 文本对齐方式 */
+  align?: 'left' | 'center' | 'right'
+  /** 屏幕位置锚点：tl/tc/tr/ml/mc/mr/bl/bc/br/free */
+  anchor?: string
+  /** 背景不透明度 0~1，0 表示完全隐藏背景 */
+  bgOpacity?: number
+  /** 文字描边，背景透明时保证可读 */
+  outline?: boolean
 }
 
 export interface StoreState {
