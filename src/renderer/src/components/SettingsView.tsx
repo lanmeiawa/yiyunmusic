@@ -60,7 +60,7 @@ const PRESET_COLORS = [
 ]
 
 export default function SettingsView() {
-  const { customization, setCustomization, chooseBg, bgData, theme, setTheme, setMessage, t } = useApp()
+  const { customization, setCustomization, chooseBg, bgData, theme, setTheme, setMessage, t, desktopLyrics, updateDesktopLyrics } = useApp()
 
   // 本地语音模型：多模型列表 + 下载进度
   type AsrModelRow = { id: string; name: string; tag: string; desc: string; approxMB: number; ready: boolean; size: number; active: boolean; downloading?: boolean }
@@ -594,6 +594,70 @@ export default function SettingsView() {
           />
           <span className="settings-slider-value">{(customization.visualSensitivity || 1.6).toFixed(1)}x</span>
         </div>
+      </section>
+
+      {/* ===== 桌面歌词样式 ===== */}
+      <section className="settings-card">
+        <h2>桌面歌词</h2>
+        <p className="settings-desc">
+          把歌词摆到屏幕上顺手的位置，背景也能彻底透明。也可以直接用鼠标拖动歌词窗口；锁定时鼠标会穿透，不会挡到下面。
+        </p>
+        <div className="dl-anchor-grid">
+          {[
+            ['tl', '左上'], ['tc', '上'], ['tr', '右上'],
+            ['ml', '左'], ['mc', '居中'], ['mr', '右'],
+            ['bl', '左下'], ['bc', '下'], ['br', '右下']
+          ].map(([code, label]) => (
+            <button
+              key={code}
+              className={`dl-anchor-cell ${desktopLyrics.anchor === code ? 'sel' : ''}`}
+              title={`贴到${label}`}
+              onClick={async () => {
+                await window.eApi.lyrics.anchor(code)
+                await updateDesktopLyrics({})
+              }}
+            >{label}</button>
+          ))}
+        </div>
+        <div className="settings-row">
+          <span className="settings-row-label">对齐</span>
+          {[['left', '左对齐'], ['center', '居中'], ['right', '右对齐']].map(([v, l]) => (
+            <button
+              key={v}
+              className={`settings-chip ${(desktopLyrics.align || 'center') === v ? 'sel' : ''}`}
+              onClick={() => updateDesktopLyrics({ align: v as any })}
+            >{l}</button>
+          ))}
+        </div>
+        <div className="settings-row">
+          <span className="settings-row-label">背景</span>
+          <input
+            type="range"
+            className="dl-bg-slider"
+            min={0}
+            max={100}
+            step={5}
+            value={Math.round((desktopLyrics.bgOpacity ?? 0.85) * 100)}
+            onChange={(e) => updateDesktopLyrics({ bgOpacity: Number(e.target.value) / 100 })}
+          />
+          <em className="dl-bg-val">{Math.round((desktopLyrics.bgOpacity ?? 0.85) * 100)}%</em>
+          <button
+            className={`settings-chip ${(desktopLyrics.bgOpacity ?? 0.85) <= 0.02 ? 'sel' : ''}`}
+            onClick={() => updateDesktopLyrics({ bgOpacity: 0 })}
+          >完全隐藏</button>
+        </div>
+        <label className="settings-switch-row">
+          <span>
+            <b>文字描边</b>
+            <i>背景透明时压在亮色壁纸上也能看清</i>
+          </span>
+          <input
+            type="checkbox"
+            checked={!!desktopLyrics.outline}
+            onChange={(e) => updateDesktopLyrics({ outline: e.target.checked })}
+          />
+          <span className="settings-switch" />
+        </label>
       </section>
 
       {/* ===== 接口线路 ===== */}
