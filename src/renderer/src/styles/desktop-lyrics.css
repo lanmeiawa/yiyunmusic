@@ -5,10 +5,11 @@ html, body, #root { background: transparent !important; }
   width: 100%; height: 100%; position: relative;
   display: flex; flex-direction: column; justify-content: center;
   border-radius: 16px; overflow: hidden;
-  background: linear-gradient(135deg, rgba(24, 24, 40, 0.62), rgba(18, 20, 36, 0.7));
-  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
+  /* 背景浓度由 --dl-alpha 控制，0 = 完全隐藏（设置页滑块 / 工具栏 ◐ 按钮） */
+  background: linear-gradient(135deg, rgba(24, 24, 40, calc(var(--dl-alpha, 0.85) * 0.62)), rgba(18, 20, 36, calc(var(--dl-alpha, 0.85) * 0.72)));
+  backdrop-filter: blur(calc(var(--dl-alpha, 0.85) * 20px)); -webkit-backdrop-filter: blur(calc(var(--dl-alpha, 0.85) * 20px));
+  border: 1px solid rgba(255, 255, 255, calc(var(--dl-alpha, 0.85) * 0.14));
+  box-shadow: 0 8px 40px rgba(0, 0, 0, calc(var(--dl-alpha, 0.85) * 0.3));
   cursor: grab; /* 全窗 JS 拖动（见组件 onMouseDown），不用 CSS app-region */
   color: #fff;
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -18,11 +19,11 @@ html, body, #root { background: transparent !important; }
 .desktop-lyrics.locked { cursor: default; }
 .dl-bg {
   position: absolute; inset: -40px; background-size: cover; background-position: center;
-  filter: blur(38px) saturate(1.6); opacity: 0.3; transform: scale(1.2); pointer-events: none;
+  filter: blur(38px) saturate(1.6); opacity: calc(var(--dl-alpha, 0.85) * 0.3); transform: scale(1.2); pointer-events: none;
 }
 .desktop-lyrics::after {
   content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.38));
+  background: linear-gradient(180deg, rgba(0,0,0, calc(var(--dl-alpha, 0.85) * 0.12)), rgba(0,0,0, calc(var(--dl-alpha, 0.85) * 0.38)));
 }
 
 /* 顶部拖动把手：视觉提示（拖动为全窗 JS 实现），锁定时隐藏 */
@@ -103,8 +104,8 @@ html, body, #root { background: transparent !important; }
 
 /* 主题联动 */
 :root[data-theme="mitia"] .desktop-lyrics {
-  background: linear-gradient(135deg, rgba(34, 28, 78, 0.66), rgba(20, 24, 60, 0.72));
-  border-color: rgba(160, 140, 255, 0.3);
+  background: linear-gradient(135deg, rgba(34, 28, 78, calc(var(--dl-alpha, 0.85) * 0.66)), rgba(20, 24, 60, calc(var(--dl-alpha, 0.85) * 0.72)));
+  border-color: rgba(160, 140, 255, calc(var(--dl-alpha, 0.85) * 0.3));
 }
 /* 米提亚主题：桌面歌词窗叠加 mitia-menu 淡淡纹理，
    纹理放在 ::before（z-index:0），位于歌词层（.dl-body z-index:2）之下不遮挡文字 */
@@ -128,3 +129,48 @@ html, body, #root { background: transparent !important; }
   gap: 3px; padding-top: 16px; padding-bottom: 16px;
 }
 .dl-rows-4 .dl-line.next, .dl-rows-5 .dl-line.next, .dl-rows-6 .dl-line.next { font-size: 0.6em; }
+
+/* ============ 背景 / 对齐 / 描边自定义 ============ */
+/* 背景完全隐藏：底、边框、投影、模糊全部去掉，只留文字 */
+.desktop-lyrics.no-bg {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+}
+.desktop-lyrics.no-bg .dl-bg,
+.desktop-lyrics.no-bg::after { display: none; }
+
+/* 文本对齐：左 / 中 / 右 */
+.dl-align-left .dl-body { align-items: flex-start; }
+.dl-align-left .dl-line { text-align: left; }
+.dl-align-right .dl-body { align-items: flex-end; }
+.dl-align-right .dl-line { text-align: right; }
+
+/* 文字描边：背景透明压在壁纸上时保证可读 */
+.desktop-lyrics.outline .dl-word {
+  filter: drop-shadow(0 0 1.5px rgba(0, 0, 0, 0.95)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+}
+/* 只给非高亮行加 text-shadow：高亮行用了 background-clip:text，
+   一旦继承 text-shadow 会导致文字填充消失、只剩轮廓 */
+.desktop-lyrics.outline .dl-line.next span,
+.desktop-lyrics.outline .dl-line.ghost span { text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 1px 2px rgba(0, 0, 0, 0.75); }
+.desktop-lyrics.outline .dl-trans { text-shadow: 0 0 3px rgba(0, 0, 0, 0.85); }
+
+/* 背景隐藏时进一步提高对比度：未唱到的部分用更亮的白，避免压在深色壁纸上发灰 */
+.desktop-lyrics.no-bg .dl-word {
+  background-image: linear-gradient(to right, var(--dl-color) var(--wf, 0%), rgba(255, 255, 255, 0.92) var(--wf, 0%));
+}
+.desktop-lyrics.no-bg .dl-line.next span { color: rgba(255, 255, 255, 0.6); }
+.desktop-lyrics.no-bg .dl-trans { color: rgba(255, 255, 255, 0.85); }
+.desktop-lyrics.no-bg.outline .dl-word {
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 1)) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9));
+}
+
+/* 窄窗口下的工具条：按钮不挤掉标题，歌手名让位 */
+.dl-actions { flex-shrink: 0; }
+.dl-title { flex: 1 1 auto; overflow: hidden; }
+@media (max-width: 520px) {
+  .dl-title .dl-artist { display: none; }
+  .dl-actions button { min-width: 24px; padding: 0 4px; }
+}
