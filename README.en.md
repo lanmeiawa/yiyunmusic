@@ -55,7 +55,7 @@ The difference is scope. The official app is a full music **community** — comm
 
 ## Features
 
-- **Live lyrics** — word-by-word highlighting, translations, click to seek, automatic gap handling between lines
+- **Live lyrics** — word-by-word highlighting, translations, click to seek, automatic gap handling between lines; jumps straight to the current line when you open, switch songs or come back from another page
 - **Desktop lyrics** — separate always-on-top window, multi-line layout, click-through lock, theme aware
 - **Themes** — Light / Dark / Mitia, custom background image and accent color
 - **Real-time audio quality** — playback and download both read the quality actually returned by the API (Standard / Higher / High / Lossless / Hi-Res) with real bitrate and file size
