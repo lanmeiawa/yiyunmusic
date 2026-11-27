@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useApp } from '../store'
 import { QUALITY_OPTIONS } from '../types'
 import { qualityLabel } from '../i18n'
@@ -27,8 +27,6 @@ export default function PlayerBar() {
   const { current, isPlaying, duration, currentTime, volume, playMode } = player
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
   const profileVip = profile?.vipType || 0
-
-  const activeQuality = QUALITY_OPTIONS.find((q) => q.level === quality) || QUALITY_OPTIONS[2]
   // 缩略标签跟随「当前实际播放档位」currentQuality：
   // 切换音质时 setQuality 会立即更新它，所以标签马上显示刚选的档位，不再停在旧值；
   // 接口若把「无损」降级为「极高」，resolveAndPlay 成功后会用真实 level 再修正。
@@ -39,7 +37,7 @@ export default function PlayerBar() {
     : qName(quality)
   const actualDesc = currentQualityInfo
     ? [
-        actualQuality?.label || actualLevel,
+        actualQuality?.label || '',
         currentQualityInfo.br ? `${Math.round(currentQualityInfo.br / 1000)}kbps` : '',
         (currentQualityInfo.type || '').toUpperCase()
       ].filter(Boolean).join(' · ')
