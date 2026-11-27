@@ -29,7 +29,7 @@ function toLocalTrack(f: { path: string; name: string; size: number }) {
     localPath: f.path
   }
 }
-import type { CommentItem, RadioCategory, LyricSearchItem, DownloadDialog, QualityProbe, AccountItem } from './types'
+import type { CommentItem, RadioCategory, RadioInfo, LyricSearchItem, DownloadDialog, QualityProbe, AccountItem } from './types'
 import { translate, type Locale } from './i18n'
 import { coverUrl } from './utils/cover'
 import { probeLabel, formatSize, levelLabel } from './utils/quality'
@@ -78,7 +78,6 @@ interface AppContextValue {
   seek: (time: number) => void
   setVolume: (v: number) => void
   setPlayMode: (m: PlayerState['playMode']) => void
-  playIndex: (index: number) => void
 
   // 歌词
   lyricLines: LyricLine[]
@@ -91,14 +90,10 @@ interface AppContextValue {
   setQuality: (level: string) => void
   currentQuality: string // 当前歌曲实际拿到的音质
   currentQualityInfo: SongUrlResult | null // 接口返回的等级/码率/格式/大小
-  reresolveCurrent: () => Promise<void>
-
-  // 封面
-  currentCover: string
 
   // 视图
-  view: 'discover' | 'playlist' | 'lyrics' | 'search' | 'history' | 'settings' | 'radio' | 'profile' | 'local' | 'onlineRadio'
-  setView: (v: 'discover' | 'playlist' | 'lyrics' | 'search' | 'history' | 'settings' | 'radio' | 'profile' | 'local' | 'onlineRadio') => void
+  view: 'discover' | 'playlist' | 'lyrics' | 'search' | 'history' | 'settings' | 'radio' | 'profile' | 'local' | 'onlineRadio' | 'fm'
+  setView: (v: 'discover' | 'playlist' | 'lyrics' | 'search' | 'history' | 'settings' | 'radio' | 'profile' | 'local' | 'onlineRadio' | 'fm') => void
 
   // 在线收音机
   radioStations: RadioStation[]
@@ -127,7 +122,6 @@ interface AppContextValue {
   bgData: string
 
   // 收藏与歌单管理
-  likedIds: number[]
   toggleLike: (track: Track) => Promise<void>
   isLiked: (id?: number) => boolean
   addToPlaylist: (playlistId: number, track: Track) => Promise<void>
@@ -162,13 +156,17 @@ interface AppContextValue {
   // 听书电台
   radioPrograms: Track[]
   radioLoading: boolean
-  loadRadio: () => Promise<void>
   radios: RadioInfo[]
   radiosLoading: boolean
   loadRadios: () => Promise<void>
   loadRadioPrograms: (radioId: number) => Promise<void>
   activeRadio: RadioInfo | null
   setActiveRadio: (r: RadioInfo | null) => void
+  radioCats: RadioCategory[]
+  activeCat: number
+  setActiveCat: (id: number) => void
+  loadRadioCats: (retry?: boolean) => Promise<void>
+  aggCats: string[]
 
   // 本地音乐
   localTracks: Track[]
@@ -191,7 +189,6 @@ interface AppContextValue {
 
   // 搜索
   searchKeyword: string
-  searchExtraLoading: string
   loadSearchSection: (kind: 'albums' | 'shows' | 'lyrics') => Promise<void>
   searchResults: { songs: Track[]; playlists: Playlist[]; shows?: Track[]; albums?: any[]; artists?: any[]; lyricHits?: LyricSearchItem[] }
   searching: boolean
@@ -262,7 +259,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const lyricSeqRef = useRef(0)
   const [songUrlLoading, setSongUrlLoading] = useState(false)
   const [message, setMessageState] = useState('')
-  const [view, setView] = useState<'discover' | 'playlist' | 'lyrics' | 'search' | 'history' | 'settings' | 'radio' | 'profile' | 'local' | 'onlineRadio'>('discover')
+  const [view, setView] = useState<'discover' | 'playlist' | 'lyrics' | 'search' | 'history' | 'settings' | 'radio' | 'profile' | 'local' | 'onlineRadio' | 'fm'>('discover')
   // 在线收音机状态
   const [radioStations, setRadioStations] = useState<RadioStation[]>([])
   const [netRadioLoading, setNetRadioLoading] = useState(false)
@@ -290,7 +287,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   })
   const [searching, setSearching] = useState(false)
   // 搜索补充分区（专辑/听书/歌词）按需加载
-  const [searchExtraLoading, setSearchExtraLoading] = useState('')
   const searchKeywordRef = useRef('')
   searchKeywordRef.current = searchKeyword
   const searchExtraRef = useRef<{ kw: string; loaded: Set<string> }>({ kw: '', loaded: new Set() })
@@ -1211,18 +1207,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // 热门节目榜（接口偶发限频，失败静默回退电台网格）
-  const loadRadio = useCallback(async () => {
-    setRadioLoading(true)
-    try {
-      const res = await window.eApi.call('dj_program_toplist', { limit: 30 })
-      const list: Track[] = ((res?.data?.list || []) as any[]).map(mapProgram).filter(Boolean) as Track[]
-      setRadioPrograms(list)
-    } catch { setRadioPrograms([]) }
-    setRadioLoading(false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   // 某电台的节目列表（dj_program 用 rid 参数；限频自动重试）
   const loadRadioPrograms = useCallback(async (radioId: number) => {
     setRadioLoading(true)
@@ -1792,7 +1776,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (searchExtraRef.current.kw !== kw) searchExtraRef.current = { kw, loaded: new Set() }
     if (searchExtraRef.current.loaded.has(kind)) return
     searchExtraRef.current.loaded.add(kind)
-    setSearchExtraLoading(kind)
     try {
       const res: any = await window.eApi.searchSection(kw, kind)
       if (res && !Array.isArray(res) && res.error) {
@@ -1840,7 +1823,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       searchExtraRef.current.loaded.delete(kind)
       setMessage(friendlyNetError(e?.message || '') || '加载失败')
     } finally {
-      setSearchExtraLoading('')
     }
   }, [setMessage])
 
@@ -2075,24 +2057,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     loginOpen, openLogin, disclaimerOpen, acceptDisclaimer, declineDisclaimer,
     setProfile, logout,
     playlists, currentPlaylistId, loadPlaylists, openPlaylist, openArtist, openAlbum, tracks, playlistName, playlistLoading,
-    player, playTrack, togglePlay, nextTrack, prevTrack, seek, setVolume, setPlayMode, playIndex,
+    player, playTrack, togglePlay, nextTrack, prevTrack, seek, setVolume, setPlayMode,
     lyricLines, songUrlLoading, message, setMessage,
-    quality, setQuality, currentQuality, currentQualityInfo, reresolveCurrent,
-    currentCover: coverUrl(player.current?.album?.picUrl, 300),
+    quality, setQuality, currentQuality, currentQualityInfo,
     view, setView,
     immersive, setImmersive,
     theme, setTheme,
     desktopLyrics, toggleDesktopLyrics, updateDesktopLyrics,
-    searchKeyword, searchExtraLoading, loadSearchSection, searchResults, searching, searchError, doSearch,
+    searchKeyword, loadSearchSection, searchResults, searching, searchError, doSearch,
     searchHistory, clearSearchHistory, removeSearchHistory,
     accounts, switchAccount, removeAccount, refreshAccounts, locale, t,
     historyTracks, loadHistory,
     customization, setCustomization, chooseBg, bgData,
-    likedIds, toggleLike, isLiked, addToPlaylist, createPlaylist, deletePlaylist,
+    toggleLike, isLiked, addToPlaylist, createPlaylist, deletePlaylist,
     batchDownload, batchLike, batchAddToPlaylist, batchRemoveFromPlaylist,
     downloadTrack, downloadDialog, confirmDownload, closeDownload,
     fmMode, fmTracks, fmLoading, fmNext, openFm, loadFm, playFmTrack, comments, loadComments, postComment,
-    radioPrograms, radioLoading, loadRadio,
+    radioPrograms, radioLoading,
     radios, radiosLoading, loadRadios, loadRadioPrograms, activeRadio, setActiveRadio,
     radioCats, activeCat, setActiveCat, loadRadioCats,
     aggCats,
