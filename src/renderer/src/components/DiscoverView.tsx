@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useApp } from '../store'
 import type { Playlist } from '../types'
 import { IconMusic, IconPlay } from './Icons'
@@ -7,7 +7,7 @@ import { coverUrl } from '../utils/cover'
 import NetImg from './NetImg'
 
 export default function DiscoverView() {
-  const { profile, playlists, openPlaylist, openLogin, customization, playTrack, setView, t } = useApp()
+  const { profile, playlists, openPlaylist, openLogin, customization, playTrack, setView, setMessage, t } = useApp()
   const [dailyCount, setDailyCount] = useState(0)
   const [dailyLoading, setDailyLoading] = useState(false)
   // 每日推荐卡片数据（拉一次数量与封面）
@@ -17,12 +17,10 @@ export default function DiscoverView() {
       const res = await window.eApi.call('recommend_songs', {})
       const songs = res?.data?.dailySongs || []
       setDailyCount(songs.length)
-      setDailyCover(songs[0]?.al?.picUrl || songs[0]?.album?.picUrl || '')
       setDailySongsCache(songs)
     } catch { setDailyCount(0) }
     setDailyLoading(false)
   }
-  const [dailyCover, setDailyCover] = useState('')
   const [dailySongsCache, setDailySongsCache] = useState<any[]>([])
   useEffect(() => { loadDaily() }, [profile?.userId])
   const [recommend, setRecommend] = useState<Playlist[]>([])
