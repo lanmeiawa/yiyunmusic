@@ -18,7 +18,6 @@ import {
 
 const DELAY_MS = 700          // 每页请求间隔（防限频）
 const MAX_PAGES_HOT = 6       // 热门电台最多遍历页数（30/页 → 最多 ~180 个）
-const MAX_PAGES_PROGRAM = 4   // 单电台节目最多遍历页数
 const CACHE_TTL = 6 * 3600 * 1000  // 缓存 6 小时
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
