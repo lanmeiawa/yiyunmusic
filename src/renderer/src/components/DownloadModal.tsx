@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../store'
 import type { QualityProbe } from '../types'
 import { levelLabel, probeLabel, formatSize, uniqueProbes } from '../utils/quality'
