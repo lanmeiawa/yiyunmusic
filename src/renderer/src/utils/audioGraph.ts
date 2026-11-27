@@ -35,7 +35,6 @@ let bands: number[] = [...EQ_PRESETS.off]
 let eqEnabled = true
 
 export function currentEqBands(): number[] { return [...bands] }
-export function isEqEnabled(): boolean { return eqEnabled }
 /** 音频图是否已经建立（一旦建立，跨域音源会被静音，必须走同源代理） */
 export function hasAudioGraph(): boolean { return !!ctx }
 
