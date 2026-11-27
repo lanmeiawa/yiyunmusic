@@ -1,4 +1,3 @@
-import React from 'react'
 import { useApp } from '../store'
 import { IconPlay, IconMusic, IconFM } from './Icons'
 import { formatTime } from '../utils/lrc'
@@ -10,7 +9,7 @@ import NetImg from './NetImg'
  * FM 歌会累积到播放队列，列表播完自动再拉一批。
  */
 export default function FmView() {
-  const { fmTracks, fmLoading, fmMode, player, openFm, loadFm, playFmTrack, fmNext, setMessage } = useApp()
+  const { fmTracks, fmLoading, fmMode, player, loadFm, playFmTrack, fmNext, setMessage } = useApp()
 
   const playAll = () => {
     if (fmTracks.length) playFmTrack(fmTracks[0])
