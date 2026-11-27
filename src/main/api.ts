@@ -1,92 +1,74 @@
-import {
-  login_qr_key,
-  login_qr_create,
-  login_qr_check,
-  login_status,
-  logout,
-  user_playlist,
-  playlist_detail,
-  song_detail,
-  song_url_v1,
-  song_url,
-  lyric as getLyric,
-  check_music,
-  search,
-  user_detail,
-  user_record,
-  user_level,
-  vip_info,
-  user_account,
-  recommend_songs,
-  personalized_newsong,
-  personalized,
-  top_album,
-  like,
-  playlist_create,
-  playlist_delete,
-  playlist_tracks,
-  personal_fm,
-  dj_hot,
-  dj_program,
-  dj_program_toplist,
-  dj_category_recommend,
-  dj_recommend,
-  comment,
-  toplist,
-  album,
-  artist_top_song,
-  search_hot_detail,
-  search_suggest,
-  cloudsearch,
-  comment_hot,
-  comment_music
-} from 'NeteaseCloudMusicApi'
 import { getCookie, mergeCookie, setCookie, setProfile, pushHistory, upsertAccount, getAccounts, setActiveAccountId, getStore } from './store'
 
 type ApiFn = (params: Record<string, any>) => Promise<any>
 
-const apiMap: Record<string, ApiFn> = {
-  login_qr_key,
-  login_qr_create,
-  login_qr_check,
-  login_status,
-  logout,
-  user_playlist,
-  playlist_detail,
-  song_detail,
-  song_url_v1,
-  song_url,
-  lyric: getLyric,
-  check_music,
-  search,
-  user_detail,
-  user_record,
-  user_level,
-  vip_info,
-  user_account,
-  recommend_songs,
-  personalized_newsong,
-  personalized,
-  top_album,
-  album,
-  artist_top_song,
-  like,
-  playlist_create,
-  playlist_delete,
-  playlist_tracks,
-  personal_fm,
-  dj_hot,
-  dj_program,
-  dj_program_toplist,
-  dj_category_recommend,
-  dj_recommend,
-  comment,
-  toplist,
-  search_hot_detail,
-  search_suggest,
-  cloudsearch,
-  comment_hot,
-  comment_music
+/**
+ * 接口库内部有上百个模块，首次 require 约 500ms。
+ * 之前写在模块顶层，等于每次启动都先花半秒把用不到的接口也加载一遍；
+ * 改为首次调用时再加载，启动阶段完全不碰它。
+ */
+let ncmModule: any = null
+function loadNcm(): any {
+  if (!ncmModule) ncmModule = require('NeteaseCloudMusicApi')
+  return ncmModule
+}
+
+let apiMapCache: Record<string, ApiFn> | null = null
+
+/** 接口名 → 实现。首次真正调用接口时才构建，避免拖慢启动。 */
+function getApiMap(): Record<string, ApiFn> {
+  if (!apiMapCache) {
+    const m = loadNcm()
+    apiMapCache = {
+      login_qr_key: m.login_qr_key,
+      login_qr_create: m.login_qr_create,
+      login_qr_check: m.login_qr_check,
+      login_status: m.login_status,
+      logout: m.logout,
+      user_playlist: m.user_playlist,
+      playlist_detail: m.playlist_detail,
+      song_detail: m.song_detail,
+      song_url_v1: m.song_url_v1,
+      song_url: m.song_url,
+      lyric: m.lyric,
+      check_music: m.check_music,
+      search: m.search,
+      user_detail: m.user_detail,
+      user_record: m.user_record,
+      user_level: m.user_level,
+      vip_info: m.vip_info,
+      user_account: m.user_account,
+      recommend_songs: m.recommend_songs,
+      personalized_newsong: m.personalized_newsong,
+      personalized: m.personalized,
+      top_album: m.top_album,
+      album: m.album,
+      artist_top_song: m.artist_top_song,
+      like: m.like,
+      playlist_create: m.playlist_create,
+      playlist_delete: m.playlist_delete,
+      playlist_tracks: m.playlist_tracks,
+      personal_fm: m.personal_fm,
+      dj_hot: m.dj_hot,
+      dj_program: m.dj_program,
+      dj_program_toplist: m.dj_program_toplist,
+      dj_category_recommend: m.dj_category_recommend,
+      dj_recommend: m.dj_recommend,
+      comment: m.comment,
+      toplist: m.toplist,
+      search_hot_detail: m.search_hot_detail,
+      search_suggest: m.search_suggest,
+      cloudsearch: m.cloudsearch,
+      comment_hot: m.comment_hot,
+      comment_music: m.comment_music
+    }
+  }
+  return apiMapCache
+}
+
+/** 预热：窗口显示后调用，把 500ms 的加载挪到用户已经在看界面的时刻 */
+export function warmupApi(): void {
+  try { getApiMap() } catch (e: any) { console.warn('[api] 接口库预热失败:', e?.message || e) }
 }
 
 /**
@@ -207,7 +189,7 @@ export async function checkApiHealth(): Promise<any> {
   }
   const t0 = Date.now()
   try {
-    const fn = apiMap['cloudsearch']
+    const fn = getApiMap()['cloudsearch']
     let via = ''
     for (let i = 0; i < HOSTS.length; i++) {
       const params: any = { keywords: 'yiyun', type: 1, limit: 1, offset: 0, cookie: getCookie(), timeout: 8000 }
@@ -248,7 +230,7 @@ export async function checkApiHealth(): Promise<any> {
  * - 统一返回 body（含 code），失败时抛出带 code/message 的结构化错误
  */
 export async function callApi(name: string, params: Record<string, any> = {}): Promise<any> {
-  const fn = apiMap[name]
+  const fn = getApiMap()[name]
   if (!fn) throw new Error(`未知接口: ${name}`)
 
   // 搜索类接口统一节流，避免并发/连发被判定「操作频繁」
