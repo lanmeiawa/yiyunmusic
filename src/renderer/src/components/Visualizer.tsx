@@ -34,7 +34,7 @@ const COLOR_SECOND = '#9b8cff'
 const spectrumBuffer = new Float32Array(64)
 /** 渐变缓存：仅在尺寸或颜色变化时重建，避免每帧 createGradient */
 const gradientCache = new Map<string, CanvasGradient>()
-function cachedGradient(ctx: CanvasRenderingContext2D, key: string, make: () => CanvasGradient): CanvasGradient {
+function cachedGradient(_ctx: CanvasRenderingContext2D, key: string, make: () => CanvasGradient): CanvasGradient {
   let g = gradientCache.get(key)
   if (!g) { g = make(); gradientCache.clear(); gradientCache.set(key, g) }
   return g
