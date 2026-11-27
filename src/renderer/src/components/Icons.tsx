@@ -137,12 +137,6 @@ export const IconClose = ({ size, className, style }: P) => (
   </svg>
 )
 
-export const IconChevronDown = ({ size, className, style }: P) => (
-  <svg {...base(size)} className={className} style={style}>
-    <path d="m6 9 6 6 6-6" />
-  </svg>
-)
-
 export const IconChevronLeft = ({ size, className, style }: P) => (
   <svg {...base(size)} className={className} style={style}>
     <path d="m15 6-6 6 6 6" />
@@ -166,14 +160,6 @@ export const IconClock = ({ size, className, style }: P) => (
   <svg {...base(size)} className={className} style={style}>
     <circle cx="12" cy="12" r="9" />
     <path d="M12 7v5l3 2" />
-  </svg>
-)
-
-export const IconMore = ({ size, className, style }: P) => (
-  <svg {...base(size)} className={className} style={style} fill="currentColor" stroke="none">
-    <circle cx="5" cy="12" r="1.6" />
-    <circle cx="12" cy="12" r="1.6" />
-    <circle cx="19" cy="12" r="1.6" />
   </svg>
 )
 
