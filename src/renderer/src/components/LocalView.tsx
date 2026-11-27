@@ -1,4 +1,3 @@
-import React from 'react'
 import { useApp } from '../store'
 import { formatTime } from '../utils/lrc'
 import { IconPlay, IconMusic } from './Icons'
