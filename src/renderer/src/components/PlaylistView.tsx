@@ -1,10 +1,9 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useApp } from '../store'
 import { IconPlay, IconMusic, IconClock, IconVip } from './Icons'
 import { formatTime } from '../utils/lrc'
 import { coverUrl } from '../utils/cover'
 import TrackActions from './TrackActions'
-import { IconList } from './Icons'
 import NetImg from './NetImg'
 
 export default function PlaylistView() {
