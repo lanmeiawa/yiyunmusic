@@ -1,4 +1,3 @@
-import React from 'react'
 import { IconMusic } from './Icons'
 import { useApp } from '../store'
 
