@@ -132,6 +132,23 @@ export const DEFAULT_CUSTOMIZATION: Customization = {
   apiBackupUrl: ''
 }
 
+/** 桌面歌词悬浮窗设置（与渲染层 types.ts 保持同构） */
+export interface DesktopLyricsSettings {
+  enabled: boolean
+  locked: boolean
+  opacity: number
+  fontSize: number
+  color?: string
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+  align?: 'left' | 'center' | 'right'
+  anchor?: string
+  bgOpacity?: number
+  outline?: boolean
+}
+
 /** 主窗口位置与大小记忆 */
 export interface WindowBounds {
   x?: number
