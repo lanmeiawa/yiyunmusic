@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useApp } from '../store'
-import { formatTime } from '../utils/lrc'
 import { coverUrl } from '../utils/cover'
 import NetImg from './NetImg'
 import { IconPlay, IconVip, IconMusic } from './Icons'
