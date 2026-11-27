@@ -1,4 +1,3 @@
-import React from 'react'
 import { useApp } from '../store'
 import { formatTime } from '../utils/lrc'
 import { coverUrl } from '../utils/cover'
@@ -7,7 +6,7 @@ import { IconPlay } from './Icons'
 
 /** 播放队列面板：当前播放列表，点击跳转播放 */
 export default function QueuePanel({ onClose }: { onClose: () => void }) {
-  const { player, playTrack, likedIds } = useApp()
+  const { player, playTrack } = useApp()
   const list = player.playlist
   return (
     <div className="queue-panel" onClick={(e) => e.stopPropagation()}>
