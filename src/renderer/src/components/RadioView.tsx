@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { useApp } from '../store'
 import { formatTime } from '../utils/lrc'
 import { coverUrl } from '../utils/cover'
@@ -9,7 +9,7 @@ import TrackActions from './TrackActions'
 /** 听书电台：两级结构——热门电台网格（稳定接口）→ 电台节目列表 */
 export default function RadioView() {
   const {
-    radioPrograms, radioLoading, loadRadio,
+    radioPrograms, radioLoading,
     radios, radiosLoading, loadRadios, loadRadioPrograms, activeRadio, setActiveRadio,
     radioCats, activeCat, setActiveCat, loadRadioCats,
     aggCats,
