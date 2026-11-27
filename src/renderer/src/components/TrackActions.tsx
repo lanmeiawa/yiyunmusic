@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useApp } from '../store'
 import type { Track } from '../types'
 import { IconHeart, IconDownload } from './Icons'
