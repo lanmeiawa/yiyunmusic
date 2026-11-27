@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { useApp } from '../store'
 import { IconClock, IconPlay, IconMusic, IconVip } from './Icons'
 import { formatTime } from '../utils/lrc'
