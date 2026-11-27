@@ -773,12 +773,10 @@ html[data-layout="magazine"] .sidebar .nav-item {
 html[data-layout="magazine"] .content {
   padding: 0;
 }
-html[data-layout="magazine"] .playlist-grid,
 html[data-layout="magazine"] .or-grid,
 html[data-layout="magazine"] .radio-grid {
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px;
 }
-html[data-layout="magazine"] .playlist-cover,
 html[data-layout="magazine"] .or-card-cover {
   border-radius: 18px; aspect-ratio: 1 / 1;
 }
