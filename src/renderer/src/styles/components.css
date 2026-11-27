@@ -862,6 +862,7 @@
 .search-tab:hover { border-color: var(--primary); color: var(--primary); }
 .search-tab.sel { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
 .search-tab.sel em { opacity: 0.8; }
+
 .lyric-hit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
 .lyric-hit-card {
   text-align: left; padding: 12px 14px; border-radius: 12px; background: var(--card);
@@ -975,6 +976,7 @@
 .shape-picker-menu.light .shape-picker-item.sel b { color: var(--primary); }
 
 /* 设置页图标预览 */
+
 .settings-icon-preview {
   width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
   background: var(--input-bg); border: 1px solid var(--border); color: var(--text-3);
