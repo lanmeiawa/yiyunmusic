@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useApp } from '../store'
 import { EQ_FREQS, EQ_LABELS, EQ_PRESETS, EQ_PRESET_LABELS, configureEq, currentEqBands } from '../utils/audioGraph'
 
