@@ -11,11 +11,6 @@ export type ThemeName = 'light' | 'dark' | 'mitia' | 'custom' | 'retro'
 /** UI 布局：经典（左栏+主区+底栏）/ 沉浸（全屏歌词与可视化）/ 杂志（大封面卡片流） */
 export type LayoutName = 'classic' | 'immersive' | 'magazine'
 
-/** 视图名（含在线收音机，radio 为听书电台） */
-export type ViewName =
-  | 'discover' | 'playlist' | 'lyrics' | 'search' | 'history'
-  | 'settings' | 'radio' | 'profile' | 'local' | 'onlineRadio' | 'fm'
-
 /** 在线收音机频道（Radio Browser 数据源） */
 export interface RadioStation {
   stationuuid: string
@@ -38,7 +33,23 @@ export interface RadioStation {
 export interface RadioTranscript {
   id: number
   text: string
-  time: number
+  /** 该条文本对应的音频时间（秒），用于滚动定位 */
+  time?: number
+}
+
+/** 听书电台（网易云 dj 分类下的电台） */
+export interface RadioInfo {
+  id: number
+  name: string
+  picUrl: string
+  programCount: number
+  category: string
+}
+
+export interface RadioCategory {
+  categoryId: number
+  categoryName: string
+  radios: RadioInfo[]
 }
 
 /** 全局快捷键映射（Electron accelerator 格式） */
@@ -62,35 +73,51 @@ export const DEFAULT_SHORTCUTS: ShortcutMap = {
 
 /** 个性化设置（与主进程 store.ts 定义保持一致） */
 export interface Customization {
+  /** 自定义主题背景图（userData 内的绝对路径） */
   bgPath?: string
+  /** 背景图应用到所有主题 */
   bgAll: boolean
+  /** 背景模糊度 px 0-30 */
   blur: number
+  /** 背景遮罩暗度 0-0.8 */
   dim: number
+  /** 自定义主色（hex），空串表示跟随所选主题 */
   primary: string
+  /** 播放倍速 0.5-2 */
   playbackRate: number
+  /** 歌词翻译显示 */
   showTranslation: boolean
+  /** 睡眠定时（分钟，0=关闭） */
   sleepTimerMin: number
+  /** 下载目录（空=默认 下载/yiyunmusic） */
   downloadDir?: string
+  /** 下载无损(FLAC)自动转 MP3 */
   flacToMp3: boolean
+  /** 下载音质：standard/exhigh/lossless */
   downloadQuality: string
+  /** 自定义应用名（空=yiyunmusic） */
   appName: string
+  /** 主页欢迎语颜色（hex，空=跟随主题） */
   welcomeColor: string
+  /** 音效预设：off/bass/vocal/live */
   soundFx: string
+  /** 歌词页字号（px） */
   lyricsFontSize: number
+  /** 自定义应用图标（userData 内的绝对路径） */
   iconPath?: string
   /** 10 段均衡器增益（dB） */
   eqBands?: number[]
-  /** 均衡器预设名，custom 表示手动调节 */
+  /** 均衡器预设名 */
   eqPreset: string
   /** 可视化形状：bars/circle/cube/sphere/wave */
   visualShape: string
-  /** 可视化灵敏度 0.5-2 */
+  /** 可视化灵敏度 */
   visualSensitivity: number
-  /** 音乐可视化总开关 */
+  /** 音乐可视化总开关（关闭时不启动渲染循环） */
   visualizerEnabled: boolean
-  /** 均衡器开关（关闭时旁通） */
+  /** 10 段均衡器开关（关闭时全部频段旁通为 0dB） */
   eqEnabled: boolean
-  /** GPU 硬件加速开关（重启生效） */
+  /** GPU 硬件加速开关（需重启应用生效） */
   gpuAcceleration: boolean
   /** 自定义全局快捷键 */
   shortcuts: ShortcutMap
@@ -99,17 +126,17 @@ export interface Customization {
   /** 界面语言 zh / en */
   language: 'zh' | 'en'
   /** 首次启动免责声明已确认 */
-  disclaimerAccepted: boolean
+  disclaimerAccepted?: boolean
   /** UI 布局风格 */
-  layout: LayoutName
+  layout?: LayoutName
   /** 收音机转写：是否启用本地语音识别 */
-  radioTranscript: boolean
-  /** 收音机转写：模型是否就绪（随安装包分发） */
+  radioTranscript?: boolean
+  /** 收音机转写：模型是否就绪 */
   radioModelReady?: boolean
   /** 开机自启 */
-  autoLaunch: boolean
-  /** 备用接口地址（自建 NeteaseCloudMusicApi，内置线路失效时使用） */
-  apiBackupUrl: string
+  autoLaunch?: boolean
+  /** 备用接口地址（自建 NeteaseCloudMusicApi） */
+  apiBackupUrl?: string
 }
 
 export const DEFAULT_CUSTOMIZATION: Customization = {
@@ -144,6 +171,7 @@ export const DEFAULT_CUSTOMIZATION: Customization = {
   apiBackupUrl: ''
 }
 
+/** 桌面歌词悬浮窗设置 */
 export interface DesktopLyricsSettings {
   enabled: boolean
   locked: boolean
@@ -152,6 +180,8 @@ export interface DesktopLyricsSettings {
   color?: string
   x?: number
   y?: number
+  width?: number
+  height?: number
   /** 文本对齐方式 */
   align?: 'left' | 'center' | 'right'
   /** 屏幕位置锚点：tl/tc/tr/ml/mc/mr/bl/bc/br/free */
@@ -160,15 +190,6 @@ export interface DesktopLyricsSettings {
   bgOpacity?: number
   /** 文字描边，背景透明时保证可读 */
   outline?: boolean
-}
-
-export interface StoreState {
-  profile: Profile | null
-  volume: number
-  playHistory: number[]
-  isLoggedIn: boolean
-  theme: ThemeName
-  desktopLyrics: DesktopLyricsSettings
 }
 
 export interface Playlist {
@@ -206,14 +227,12 @@ export interface Track {
   dj?: boolean
   /** 本地音乐文件（绝对路径，播放走 file:// 不走接口） */
   localPath?: string
-  /** 在线收音机流地址（无时长概念，播放走本地代理） */
-  streamUrl?: string
 }
 
 export interface WordToken {
   text: string
   time: number // 该字/词开始时间（秒）
-  end: number  // 该字/词结束时间（秒）
+  end: number // 该字/词结束时间（秒）
 }
 
 export interface LyricLine {
@@ -295,6 +314,7 @@ export interface CommentItem {
   content: string
   time: string
   likes: number
+  liked?: boolean
 }
 
 export interface LyricSearchItem {
@@ -302,18 +322,4 @@ export interface LyricSearchItem {
   name: string
   artists: string
   snippet: string
-}
-
-export interface RadioInfo {
-  id: number
-  name: string
-  picUrl: string
-  programCount: number
-  category: string
-}
-
-export interface RadioCategory {
-  categoryId: number
-  categoryName: string
-  radios: RadioInfo[]
 }
