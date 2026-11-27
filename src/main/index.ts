@@ -22,7 +22,8 @@ import {
   switchAccount,
   fetchFmBatch,
   searchSection,
-  checkApiHealth
+  checkApiHealth,
+  warmupApi
 } from './api'
 import { startAudioProxy, stopAudioProxy, registerAudioUrl, registerLocalAudio, hlsProxyUrl, probeStream } from './audio-proxy'
 import { registerAsrIpc } from './asr'
@@ -149,15 +150,18 @@ async function proxyImage(rawUrl: string): Promise<string> {
   }
 }
 
-function loadRenderer(win: BrowserWindow, hash = '') {
+/**
+ * 加载渲染页面。
+ * 桌面歌词用独立的 lyrics.html（只有歌词组件），避免小窗口也解析整个应用；
+ * 打包后两个入口都在 out/renderer 下。
+ */
+function loadRenderer(win: BrowserWindow, page: 'index' | 'lyrics' = 'index') {
   const dev = process.env['ELECTRON_RENDERER_URL']
-  const file = join(__dirname, '../renderer/index.html')
-  const h = hash ? hash.replace('#', '') : ''
+  const file = join(__dirname, `../renderer/${page}.html`)
   if (dev) {
-    win.loadURL(dev + (h ? '#' + h : ''))
+    win.loadURL(page === 'lyrics' ? `${dev}/lyrics.html` : dev)
   } else {
-    // Electron loadFile(filePath, options)：hash 放在 options 里
-    win.loadFile(file, h ? { hash: h } : {})
+    win.loadFile(file)
   }
 }
 
@@ -165,7 +169,7 @@ function createWindow() {
   // 窗口位置/大小记忆：恢复上次状态，越界时自动回退默认
   const bounds = getStore().windowBounds
   const display = screen.getPrimaryDisplay().workAreaSize
-  const wb = bounds && bounds.width && bounds.x !== undefined &&
+  const wb = bounds && bounds.width && bounds.x !== undefined && bounds.y !== undefined &&
     bounds.x > -bounds.width + 120 && bounds.x < display.width - 120 &&
     bounds.y > -bounds.height + 60 && bounds.y < display.height - 60
     ? bounds : undefined
@@ -176,7 +180,7 @@ function createWindow() {
     y: wb?.y,
     minWidth: 940,
     minHeight: 640,
-    icon: appIconPath(), // 开发态窗口/任务栏图标（打包后使用 exe 内嵌 ico）
+    icon: windowIcon(), // 打包后任务栏用的是 exe 内嵌图标，无需再读一遍大图
     frame: false, // 无边框，自定义标题栏
     transparent: false,
     backgroundColor: getStore().theme === 'dark' ? '#1a1b26' : '#f7f8fc',
@@ -194,6 +198,12 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show()
     if (!getStore().windowBounds) mainWindow?.center()
+    // 托盘与接口库都不影响首屏：等窗口真正显示后再做，避免和首帧抢主线程
+    setTimeout(() => {
+      createTray()
+      // 首个接口请求到来前先预热，把 500ms 的库加载放在用户已经在看界面的时刻
+      warmupApi()
+    }, 200)
   })
 
   // 窗口位置/大小变化时防抖保存
@@ -278,7 +288,7 @@ function createLyricsWindow() {
     }
   })
 
-  loadRenderer(lyricsWindow, '#desktop-lyrics')
+  loadRenderer(lyricsWindow, 'lyrics')
 
   // 位置/大小变化时防抖持久化
   let saveTimer: any = null
@@ -353,7 +363,6 @@ function setLyricsWindowSize(w: number, h: number) {
 function resizeLyricsWindow(dw: number) {
   if (!lyricsWindow || lyricsWindow.isDestroyed()) return
   const [w, h] = lyricsWindow.getSize()
-  const display = screen.getPrimaryDisplay().workAreaSize
   const nw = Math.max(400, Math.min(1200, w + dw))
   const nh = Math.max(90, Math.min(420, Math.round((h / w) * nw)))
   lyricsWindow.setSize(nw, nh)
@@ -439,6 +448,35 @@ function appIconPath(): string {
   return app.isPackaged
     ? path.join(process.resourcesPath, 'icon.png')
     : path.join(__dirname, '../../build/icon.png')
+}
+
+/**
+ * 小尺寸图标路径（托盘 32px / 窗口 256px）。
+ * 原图是 1024px、1.6MB，启动时解码一次要几十毫秒，托盘和窗口各解码一次更亏；
+ * 构建时预生成了小图，启动只读几 KB。自定义图标没有小图，退回原图。
+ */
+function appIconSmallPath(): string {
+  const custom = getStore().customization.iconPath
+  if (custom && fs.existsSync(custom)) return custom
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'icon-32.png')
+    : path.join(__dirname, '../../build/icon-32.png')
+}
+
+function appIcon256Path(): string {
+  const custom = getStore().customization.iconPath
+  if (custom && fs.existsSync(custom)) return custom
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'icon-256.png')
+    : path.join(__dirname, '../../build/icon-256.png')
+}
+
+/** 窗口图标：Windows 打包版任务栏用 exe 内嵌 ico，无需再显式指定；只在开发态/自定义图标时加载 */
+function windowIcon(): string | undefined {
+  const custom = getStore().customization.iconPath
+  if (custom && fs.existsSync(custom)) return custom
+  if (process.platform === 'win32' && app.isPackaged) return undefined
+  return appIcon256Path()
 }
 
 const SHORTCUT_NAMES = ['yiyunmusic', '亦云音乐']
@@ -532,11 +570,13 @@ function applyAppIcon(iconPath?: string) {
 /** 系统托盘 */
 function createTray() {
   try {
-    const icon = nativeImage.createFromPath(appIconPath()).resize({ width: 16, height: 16 })
-    if (icon.isEmpty()) {
-      console.error('[tray] 图标读取失败:', appIconPath())
+    // 优先读 32px 小图，避免为了一个托盘图标解码 1.6MB 原图
+    const raw = nativeImage.createFromPath(appIconSmallPath())
+    if (raw.isEmpty()) {
+      console.error('[tray] 图标读取失败:', appIconSmallPath())
       return
     }
+    const icon = raw.getSize().width > 16 ? raw.resize({ width: 16, height: 16 }) : raw
     tray = new Tray(icon)
     updateTrayMenu()
     tray.setToolTip(getStore().customization.appName || 'yiyunmusic')
@@ -1091,7 +1131,9 @@ app.whenReady().then(() => {
 
   setupIpc()
   createWindow()
-  createTray()
+  // 托盘在窗口首帧之后再建（见 createWindow 的 ready-to-show），这里不再阻塞启动
+  // 兜底：若渲染层异常导致 ready-to-show 没触发，3 秒后也把托盘建起来
+  setTimeout(() => { if (!tray) createTray() }, 3000)
 
   // 安装时用户选择了下载语音模型 → 首次启动自动从镜像下载（多镜像 + 断点续传）
   try {
