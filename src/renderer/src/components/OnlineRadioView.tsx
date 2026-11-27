@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useApp } from '../store'
 import { IconPlay, IconMusic } from './Icons'
 import NetImg from './NetImg'
