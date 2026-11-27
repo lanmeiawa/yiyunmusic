@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useApp } from '../store'
 import { findActiveIndex, computeWordProgress, isLyricGap } from '../utils/lrc'
 import { coverUrl } from '../utils/cover'
