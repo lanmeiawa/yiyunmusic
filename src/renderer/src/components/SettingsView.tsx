@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useApp } from '../store'
 import { LOCALES } from '../i18n'
 import { DEFAULT_SHORTCUTS, type ShortcutMap } from '../types'
