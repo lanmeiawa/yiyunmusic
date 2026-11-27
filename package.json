@@ -1,6 +1,6 @@
 {
   "name": "yiyunmusic",
-  "version": "2.2.9",
+  "version": "2.3.0",
   "private": true,
   "description": "把动态歌词做到极致的网易云音乐第三方桌面客户端",
   "homepage": "https://github.com/lanmeiawa/yiyunmusic",
@@ -15,7 +15,6 @@
     "dist:portable": "electron-vite build && electron-builder --win --x64 --dir"
   },
   "dependencies": {
-    "electron-store": "^8.2.0",
     "ffmpeg-static": "5.2.0",
     "hls.js": "^1.7.4",
     "NeteaseCloudMusicApi": "^4.34.1",
@@ -50,6 +49,14 @@
       {
         "from": "build/icon.png",
         "to": "icon.png"
+      },
+      {
+        "from": "build/icon-32.png",
+        "to": "icon-32.png"
+      },
+      {
+        "from": "build/icon-256.png",
+        "to": "icon-256.png"
       }
     ],
     "asarUnpack": [
