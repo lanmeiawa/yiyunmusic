@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useApp } from '../store'
 import { IconPlay, IconVip, IconSearch } from './Icons'
 import { formatTime } from '../utils/lrc'
@@ -9,7 +9,7 @@ import NetImg from './NetImg'
 type Category = 'all' | 'songs' | 'playlists' | 'albums' | 'artists'
 
 export default function SearchView() {
-  const { searchKeyword, searchResults, searchError, searching, searchExtraLoading, loadSearchSection, playTrack, openPlaylist, openArtist, openAlbum, doSearch, t } = useApp()
+  const { searchKeyword, searchResults, searchError, searching, loadSearchSection, playTrack, openPlaylist, openArtist, openAlbum, doSearch, t } = useApp()
   const { songs, playlists, albums, artists } = searchResults
   const [cat, setCat] = useState<Category>('all')
 
