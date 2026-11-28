@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { coverUrl } from '../utils/cover'
 
 interface WordToken { text: string; time: number; end: number }
@@ -70,6 +70,24 @@ export default function DesktopLyrics() {
   const [color, setColor] = useState('#ff9db4')
   const [showBar, setShowBar] = useState(false)
   const [showColors, setShowColors] = useState(false)
+  // 工具条自动收起：鼠标停下 2.2 秒后隐藏；停在工具条上时保持显示
+  const barHideTimer = useRef<any>(null)
+  const barHoverRef = useRef(false)
+  const revealBar = useCallback(() => {
+    setShowBar(true)
+    if (barHideTimer.current) clearTimeout(barHideTimer.current)
+    barHideTimer.current = setTimeout(() => {
+      if (barHoverRef.current) return
+      setShowBar(false)
+      setShowColors(false)
+    }, 2200)
+  }, [])
+  const hideBarNow = useCallback(() => {
+    if (barHideTimer.current) clearTimeout(barHideTimer.current)
+    setShowBar(false)
+    setShowColors(false)
+  }, [])
+  useEffect(() => () => { if (barHideTimer.current) clearTimeout(barHideTimer.current) }, [])
   // 自适应行数：按窗口高度与字号计算，最小 1 行，最多 6 行
   const [rows, setRows] = useState(1)
   const [sizeIdx, setSizeIdx] = useState(0)
@@ -192,6 +210,8 @@ export default function DesktopLyrics() {
       className={`desktop-lyrics ${locked ? 'locked' : ''} dl-align-${align} ${bgOpacity <= 0.02 ? 'no-bg' : ''} ${outline ? 'outline' : ''}`}
       style={{ fontSize, ['--dl-color' as any]: color, ['--dl-alpha' as any]: Math.max(0, Math.min(1, bgOpacity)) }}
       onMouseDown={onWindowMouseDown}
+      onMouseMove={revealBar}
+      onMouseLeave={hideBarNow}
     >
       {cover && <div className="dl-bg" style={{ backgroundImage: `url(${cover})` }} />}
 
@@ -200,8 +220,8 @@ export default function DesktopLyrics() {
 
       <div
         className={`dl-toolbar ${showBar ? 'show' : ''}`}
-        onMouseEnter={() => setShowBar(true)}
-        onMouseLeave={() => { setShowBar(false); setShowColors(false) }}
+        onMouseEnter={() => { barHoverRef.current = true; revealBar() }}
+        onMouseLeave={() => { barHoverRef.current = false; revealBar() }}
       >
         <div className="dl-title">
           <span className={`dl-eq ${data.isPlaying ? 'playing' : ''}`}><i /><i /><i /></span>
@@ -238,7 +258,7 @@ export default function DesktopLyrics() {
         )}
       </div>
 
-      <div className={`dl-body dl-rows-${rows}`} ref={bodyRef} onMouseEnter={() => setShowBar(true)}>
+      <div className={`dl-body dl-rows-${rows}`} ref={bodyRef} onMouseEnter={revealBar}>
         {lines.length > 0 ? (
           <>
             <ActiveLyric line={curLine} p={data} />
