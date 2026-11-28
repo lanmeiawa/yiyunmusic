@@ -371,8 +371,17 @@ export async function qrLoginCheck(key: string) {
 /** 获取当前登录用户资料 */
 export async function refreshProfile() {
   const body = await callApi('login_status')
-  if (body?.data?.profile) {
-    const p = body.data.profile
+  let p = body?.data?.profile
+  // login_status 偶尔会被风控/抖动影响，返回空资料；
+  // 只凭一次空结果就把用户登出太粗暴（今天就是这样被清掉的），
+  // 这里再用 user_account 复核一次，两处都拿不到才判定为未登录。
+  if (!p) {
+    try {
+      const acc: any = await callApi('user_account')
+      if (acc?.profile) p = acc.profile
+    } catch { /* 复核也失败：按未登录处理 */ }
+  }
+  if (p) {
     setProfile({
       userId: p.userId,
       nickname: p.nickname,
