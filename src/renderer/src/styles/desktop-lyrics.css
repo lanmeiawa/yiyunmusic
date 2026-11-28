@@ -38,14 +38,24 @@ html, body, #root { background: transparent !important; }
 .dl-grip::before { content: ''; width: 40px; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.4); }
 .desktop-lyrics.locked .dl-grip { opacity: 0; }
 
+/* 独立入口不加载主界面样式：必须自带按钮重置，
+   否则工具栏会退化成系统默认的灰底 3D 按钮，既突兀又挡不住透明度 */
+.desktop-lyrics button {
+  font-family: inherit; font-size: inherit; cursor: pointer;
+  border: 0; background: none; color: inherit; outline: none;
+}
+
 /* 顶部工具条 */
 .dl-toolbar {
   position: absolute; top: 0; left: 0; right: 0; z-index: 8;
   height: 34px; display: flex; align-items: center; justify-content: space-between;
   padding: 0 12px; opacity: 0; transform: translateY(-6px); transition: 0.2s;
-  background: linear-gradient(180deg, rgba(0,0,0,0.4), transparent);
+  /* 浓度跟随背景设置：背景全透明时这里也一起消失 */
+  background: linear-gradient(180deg, rgba(0,0,0, calc(var(--dl-alpha, 0.85) * 0.35)), transparent);
+  /* 收起时不拦截鼠标，避免挡住歌词区的点击 */
+  pointer-events: none;
 }
-.dl-toolbar.show { opacity: 1; transform: translateY(0); }
+.dl-toolbar.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
 .dl-title { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 11px; }
 .dl-song { font-weight: 600; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dl-artist { color: rgba(255,255,255,0.6); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -174,3 +184,13 @@ html, body, #root { background: transparent !important; }
   .dl-title .dl-artist { display: none; }
   .dl-actions button { min-width: 24px; padding: 0 4px; }
 }
+
+/* 背景完全隐藏时：工具条与拖动把手都不再有任何底色，只留文字/图标 */
+.desktop-lyrics.no-bg .dl-toolbar { background: none; }
+.desktop-lyrics.no-bg .dl-grip { background: none; }
+.desktop-lyrics.no-bg .dl-title,
+.desktop-lyrics.no-bg .dl-actions {
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85), 0 0 1px rgba(0, 0, 0, 0.6);
+}
+.desktop-lyrics.no-bg .dl-actions button:hover { background: rgba(255, 255, 255, 0.18); }
