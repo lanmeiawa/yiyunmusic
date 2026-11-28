@@ -94,26 +94,26 @@
 
 ## 最近更新
 
-**v2.3.0** —— 启动更快：接口库改为按需加载、首屏只加载必要页面、桌面歌词独立入口，从点开图标到看见界面约 0.4 秒（原来约 1 秒）；同时清理了一批无用代码，功能无删减。
+**v2.3.1** —— 桌面歌词工具栏会自己收起了（停手 2 秒淡出），按钮去掉灰底、透明背景时整条工具栏彻底透明；同时修掉了网络抖动时可能被误登出的问题。
 
 更早的版本见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 下载
 
-Windows 和 Linux 现在放在**同一个发布页**，进去按系统挑就行：[v2.3.0 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.3.0)。
+Windows 和 Linux 现在放在**同一个发布页**，进去按系统挑就行：[v2.3.1 Release](https://github.com/lanmeiawa/yiyunmusic/releases/tag/v2.3.1)。
 
 ### Windows（10 / 11 x64）
 
-- **yiyunmusic-Setup-2.3.0.exe** —— 安装版（可自定义安装目录、自动创建快捷方式）
-- **yiyunmusic-portable-2.3.0.exe** —— 便携版，免安装，双击即用
+- **yiyunmusic-Setup-2.3.1.exe** —— 安装版（可自定义安装目录、自动创建快捷方式）
+- **yiyunmusic-portable-2.3.1.exe** —— 便携版，免安装，双击即用
 
 > 安装新版时会自动迁移旧版的登录态与个性化设置，无需重新扫码登录。登录凭证（Cookie）已加密存储，不再明文落盘。
 
 ### Linux（x64）
 
-- **yiyunmusic-2.3.0-x86_64.AppImage** —— Arch / 通用，`chmod +x` 后双击即可运行
-- **yiyunmusic-2.3.0-amd64.deb** —— Ubuntu / Debian，`sudo apt install ./yiyunmusic-2.3.0-amd64.deb`
-- **yiyunmusic-2.3.0-x64.tar.gz** —— 通用便携版，解压后运行 `./yiyunmusic`
+- **yiyunmusic-2.3.1-x86_64.AppImage** —— Arch / 通用，`chmod +x` 后双击即可运行
+- **yiyunmusic-2.3.1-amd64.deb** —— Ubuntu / Debian，`sudo apt install ./yiyunmusic-2.3.1-amd64.deb`
+- **yiyunmusic-2.3.1-x64.tar.gz** —— 通用便携版，解压后运行 `./yiyunmusic`
 
 ## 使用方法
 
